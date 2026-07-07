@@ -7,29 +7,29 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0f172a; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    #lobby-selector {
-      position: fixed; top: 20px; right: 20px; z-index: 9999;
-      background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(99, 102, 241, 0.5);
-      border-radius: 16px; padding: 20px; min-width: 220px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(12px);
+    #toolbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+      backdrop-filter: blur(12px); padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
     }
-    #lobby-selector h3 { color: #818cf8; margin-bottom: 12px; font-size: 14px; text-align: center; }
-    .client-selector { margin-bottom: 12px; }
-    .client-selector label { display: block; margin-bottom: 6px; font-size: 11px; color: #94a3b8; text-align: center; }
-    .client-buttons { display: flex; gap: 6px; }
+    .left-section { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .right-section { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .logo { font-size: 18px; font-weight: bold; background: linear-gradient(135deg, #818cf8, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .client-selector { display: flex; gap: 6px; }
     .client-btn {
-      flex: 1; padding: 6px 8px; border: 1px solid #334155; border-radius: 6px;
-      font-size: 11px; cursor: pointer; transition: all 0.2s;
+      padding: 6px 12px; border: 1px solid #334155; border-radius: 6px;
+      font-size: 12px; cursor: pointer; transition: all 0.2s;
       background: #1e293b; color: #cbd5e1;
     }
     .client-btn:hover { background: #334155; }
     .client-btn.active { background: #6366f1; border-color: #6366f1; color: white; }
-    .lobby-buttons { display: flex; flex-direction: column; gap: 8px; }
+    .lobby-selector { display: flex; gap: 8px; }
     .lobby-btn {
-      padding: 12px 16px; border: none; border-radius: 10px;
+      padding: 8px 16px; border: none; border-radius: 8px;
       font-size: 13px; font-weight: 600; cursor: pointer;
-      transition: all 0.25s; display: flex; align-items: center; gap: 10px;
+      transition: all 0.25s; display: flex; align-items: center; gap: 8px;
     }
     .lobby-btn-0 { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
     .lobby-btn-0:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4); }
@@ -38,55 +38,65 @@
     .lobby-btn-2 { background: linear-gradient(135deg, #eab308, #ca8a04); color: white; }
     .lobby-btn-2:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4); }
     .lobby-btn.active { border: 2px solid white; box-shadow: 0 0 20px rgba(255, 255, 255, 0.3); }
-    #status {
-      margin-top: 14px; text-align: center; font-size: 12px; color: #94a3b8;
-      min-height: 16px;
-    }
+    #status { font-size: 12px; color: #94a3b8; }
     #status.success { color: #22c55e; }
     #status.error { color: #ef4444; }
-    #game-container { width: 100vw; height: 100vh; position: relative; }
-    #game-container iframe { width: 100%; height: 100%; border: none; }
-    #loader {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #0f172a; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; z-index: 10000;
-      transition: opacity 0.5s;
+    #status.info { color: #3b82f6; }
+    #game-container { width: 100vw; height: 100vh; padding-top: 60px; }
+    #game-container iframe { width: 100%; height: calc(100% - 60px); border: none; }
+    #injection-modal {
+      position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+      z-index: 10000; background: rgba(15, 23, 42, 0.98);
+      border: 1px solid rgba(99, 102, 241, 0.5); border-radius: 16px;
+      padding: 24px; min-width: 320px; max-width: 90vw;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
     }
-    #loader.hidden { opacity: 0; pointer-events: none; }
-    .spinner {
-      width: 48px; height: 48px; border: 4px solid rgba(99, 102, 241, 0.2);
-      border-top-color: #818cf8; border-radius: 50%; animation: spin 0.8s linear infinite;
+    #injection-modal.hidden { display: none; }
+    #injection-modal h3 { color: #818cf8; margin-bottom: 16px; font-size: 16px; text-align: center; }
+    #injection-modal p { color: #94a3b8; font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
+    #injection-modal .code-block {
+      background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+      padding: 12px; font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 11px; color: #22c55e; word-break: break-all;
+      margin-bottom: 16px; cursor: pointer;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #loader p { margin-top: 24px; color: #94a3b8; font-size: 15px; }
-    #loader .subtitle { margin-top: 8px; font-size: 12px; color: #64748b; }
+    #injection-modal .code-block:hover { background: #1e293b; }
+    #injection-modal button {
+      width: 100%; padding: 12px; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white; transition: all 0.2s;
+    }
+    #injection-modal button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); }
+    #injection-modal .hint { font-size: 11px; color: #64748b; text-align: center; margin-top: 8px; }
   </style>
 </head>
 <body>
-  <div id="loader">
-    <div class="spinner"></div>
-    <p>正在加载游戏...</p>
-    <p class="subtitle">脚本注入中，请稍候</p>
-  </div>
-
-  <div id="lobby-selector">
-    <h3>🎮 大厅管理</h3>
-    
-    <div class="client-selector">
-      <label>选择客户端</label>
-      <div class="client-buttons">
+  <div id="toolbar">
+    <div class="left-section">
+      <div class="logo">🎮 TT Lobby</div>
+      <div class="client-selector">
         <button class="client-btn active" data-client="official">官方</button>
         <button class="client-btn" data-client="fxclient">FX</button>
       </div>
     </div>
-
-    <div class="lobby-buttons">
-      <button class="lobby-btn lobby-btn-0" data-lobby="0">🟢 Lobby 0</button>
-      <button class="lobby-btn lobby-btn-1" data-lobby="1">🔴 Lobby 1</button>
-      <button class="lobby-btn lobby-btn-2" data-lobby="2">🟡 Lobby 2</button>
+    <div class="right-section">
+      <div class="lobby-selector">
+        <button class="lobby-btn lobby-btn-0" data-lobby="0">🟢 Lobby 0</button>
+        <button class="lobby-btn lobby-btn-1" data-lobby="1">🔴 Lobby 1</button>
+        <button class="lobby-btn lobby-btn-2" data-lobby="2">🟡 Lobby 2</button>
+      </div>
+      <div id="status">点击大厅按钮开始</div>
     </div>
-    
-    <div id="status">正在注入脚本...</div>
+  </div>
+
+  <div id="injection-modal">
+    <h3>📋 需要手动注入脚本</h3>
+    <p>由于浏览器安全限制，无法自动注入脚本到游戏页面。请按照以下步骤操作：</p>
+    <div class="code-block" id="script-code">// 点击此处复制脚本，然后在游戏页面按 F12 粘贴到控制台</div>
+    <button id="copy-btn">复制脚本</button>
+    <p class="hint">复制后，切换到游戏页面 → 按 F12 → 粘贴到控制台 → 按回车</p>
   </div>
 
   <div id="game-container">
@@ -106,9 +116,15 @@
     
     const iframe = document.getElementById('game-iframe');
     const statusEl = document.getElementById('status');
-    const loader = document.getElementById('loader');
+    const modal = document.getElementById('injection-modal');
+    const scriptCodeEl = document.getElementById('script-code');
+    const copyBtn = document.getElementById('copy-btn');
     const lobbyButtons = document.querySelectorAll('.lobby-btn');
     const clientButtons = document.querySelectorAll('.client-btn');
+
+    function generateScript(lobbyId) {
+      return `(function(){const l=${lobbyId},s=['territorial.io','1.territorial.io','2.territorial.io'];const o=WebSocket;WebSocket=function(u,p){let t=u;try{const r=new URL(u);if(r.hostname.includes('territorial.io')){r.hostname=s[l];t=r.toString()}}catch(e){}return new o(t,p)};window.ttLobbyId=l;console.log('[TT Lobby] Connected to Lobby',l);alert('✓ 已切换到 Lobby '+l+'！请点击 Multiplayer 进入游戏');})();`;
+    }
 
     function updateActiveButtons() {
       lobbyButtons.forEach(btn => {
@@ -119,76 +135,27 @@
         const clientId = btn.dataset.client;
         btn.classList.toggle('active', clientId === selectedClient);
       });
-    }
-
-    function injectScript(lobbyId) {
-      selectedLobby = lobbyId;
-      updateActiveButtons();
-      
-      try {
-        const blob = new Blob([`
-          (function() {
-            const lobbyId = ${lobbyId};
-            const servers = ['territorial.io', '1.territorial.io', '2.territorial.io'];
-            
-            console.log('[TT Lobby] Script injected for Lobby', lobbyId);
-            
-            const originalWebSocket = window.WebSocket;
-            window.WebSocket = function(url, protocols) {
-              let targetUrl = url;
-              try {
-                const parsedUrl = new URL(url);
-                if (parsedUrl.hostname.includes('territorial.io')) {
-                  parsedUrl.hostname = servers[lobbyId];
-                  targetUrl = parsedUrl.toString();
-                  console.log('[TT Lobby] WebSocket redirected to:', targetUrl);
-                }
-              } catch(e) {}
-              return new originalWebSocket(targetUrl, protocols);
-            };
-            
-            window.ttLobbyId = lobbyId;
-            window.dispatchEvent(new CustomEvent('tt-lobby-injected', { detail: { lobbyId } }));
-            console.log('[TT Lobby] Script loaded successfully!');
-          })();
-        `], { type: 'application/javascript' });
-        
-        const url = URL.createObjectURL(blob);
-        const script = document.createElement('script');
-        script.src = url;
-        script.onload = () => {
-          URL.revokeObjectURL(url);
-          statusEl.textContent = `已切换到 Lobby ${lobbyId}`;
-          statusEl.className = 'success';
-          setTimeout(() => { statusEl.className = ''; }, 3000);
-        };
-        script.onerror = () => {
-          URL.revokeObjectURL(url);
-          statusEl.textContent = '注入失败，请重试';
-          statusEl.className = 'error';
-        };
-
-        if (iframe.contentDocument && iframe.contentDocument.head) {
-          iframe.contentDocument.head.appendChild(script);
-        } else {
-          throw new Error('Cannot access iframe document');
-        }
-      } catch (error) {
-        console.error('[TT Lobby] Injection error:', error);
-        statusEl.textContent = '注入失败，请手动刷新';
-        statusEl.className = 'error';
-      }
+      scriptCodeEl.textContent = generateScript(selectedLobby);
     }
 
     function reloadGame() {
-      loader.classList.remove('hidden');
+      statusEl.textContent = '正在加载游戏...';
+      statusEl.className = 'info';
       iframe.src = clients[selectedClient];
+      setTimeout(() => {
+        modal.classList.remove('hidden');
+        statusEl.textContent = '请手动注入脚本';
+        statusEl.className = '';
+      }, 3000);
     }
 
     lobbyButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        const lobbyId = parseInt(btn.dataset.lobby);
-        injectScript(lobbyId);
+        selectedLobby = parseInt(btn.dataset.lobby);
+        updateActiveButtons();
+        statusEl.textContent = `已选择 Lobby ${selectedLobby}`;
+        statusEl.className = 'success';
+        setTimeout(() => { statusEl.className = ''; }, 2000);
       });
     });
 
@@ -200,15 +167,34 @@
       });
     });
 
-    iframe.addEventListener('load', () => {
-      loader.classList.add('hidden');
+    copyBtn.addEventListener('click', () => {
+      const script = generateScript(selectedLobby);
+      navigator.clipboard.writeText(script).then(() => {
+        copyBtn.textContent = '✓ 已复制！';
+        copyBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+        setTimeout(() => {
+          copyBtn.textContent = '复制脚本';
+          copyBtn.style.background = '';
+        }, 2000);
+      });
+    });
+
+    scriptCodeEl.addEventListener('click', () => {
+      const script = generateScript(selectedLobby);
+      navigator.clipboard.writeText(script);
+      scriptCodeEl.textContent = '✓ 已复制！';
+      scriptCodeEl.style.color = '#22c55e';
       setTimeout(() => {
-        injectScript(selectedLobby);
-      }, 1500);
+        scriptCodeEl.textContent = generateScript(selectedLobby);
+        scriptCodeEl.style.color = '';
+      }, 2000);
     });
 
     updateActiveButtons();
     iframe.src = clients[selectedClient];
+    setTimeout(() => {
+      modal.classList.remove('hidden');
+    }, 3000);
   </script>
 </body>
 </html>

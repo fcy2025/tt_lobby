@@ -6,43 +6,37 @@ const LOBBIES = [
   { id: 2, name: 'Lobby 2', icon: '🟡', host: '2.territorial.io', desc: '备选大厅', color: 'from-yellow-500 to-amber-600' },
 ];
 
+const INJECT_SCRIPT = `(function(){
+  var h=sessionStorage.getItem('tt_lobby');
+  if(h){
+    var O=window.WebSocket;
+    window.WebSocket=function(u,p){
+      var M=u;
+      if(u&&typeof u==='string'){
+        try{
+          var U=new URL(u);
+          if(U.hostname.includes('territorial.io')||U.hostname.includes('fxclient.github.io')){
+            U.hostname=h;
+            M=U.toString();
+          }
+        }catch(e){}
+      }
+      return p?new O(M,p):new O(M);
+    };
+    window.WebSocket.prototype=O.prototype;
+    sessionStorage.removeItem('tt_lobby');
+    console.log('TT Lobby: WebSocket hooked, redirect to '+h);
+  }
+})();`;
+
 function App() {
   const [copied, setCopied] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'bookmark' | 'script'>('bookmark');
 
-  const getStartupScript = () => {
-    return `(function(){
-      var h=localStorage.getItem('tt_lobby_host');
-      var id=localStorage.getItem('tt_lobby_id');
-      if(h&&id){
-        var O=window.WebSocket;
-        window.WebSocket=function(u,p){
-          var M=u;
-          if(u&&typeof u==='string'){
-            try{
-              var U=new URL(u);
-              var hn=U.hostname;
-              if(hn.includes('territorial.io')||hn.includes('fxclient.github.io')){
-                U.hostname=h;
-                M=U.toString();
-              }
-            }catch(e){}
-          }
-          return p?new O(M,p):new O(M);
-        };
-        window.WebSocket.prototype=O.prototype;
-        alert('✓ 已切换到 Lobby '+id+'\\n请点击 多人游戏 进入游戏');
-      }
-      localStorage.removeItem('tt_lobby_host');
-      localStorage.removeItem('tt_lobby_id');
-    })();`.replace(/\n\s*/g, '');
-  };
-
   const getBookmarkScript = (lobbyId: number) => {
     const host = LOBBIES[lobbyId].host;
     return `(function(){
-      localStorage.setItem('tt_lobby_host','${host}');
-      localStorage.setItem('tt_lobby_id','${lobbyId}');
+      sessionStorage.setItem('tt_lobby','${host}');
       location.reload();
     })();`.replace(/\n\s*/g, '');
   };
@@ -50,8 +44,7 @@ function App() {
   const getConsoleScript = (lobbyId: number) => {
     const host = LOBBIES[lobbyId].host;
     return `(function(){
-      localStorage.setItem('tt_lobby_host','${host}');
-      localStorage.setItem('tt_lobby_id','${lobbyId}');
+      sessionStorage.setItem('tt_lobby','${host}');
       location.reload();
     })();`.replace(/\n\s*/g, '');
   };
@@ -66,8 +59,8 @@ function App() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const copyStartupScript = async () => {
-    await navigator.clipboard.writeText(getStartupScript());
+  const copyInjectScript = async () => {
+    await navigator.clipboard.writeText(INJECT_SCRIPT);
     setCopied(-1);
     setTimeout(() => setCopied(null), 2000);
   };
@@ -121,14 +114,29 @@ function App() {
           {activeTab === 'bookmark' && (
             <div className="space-y-3">
               <div className="bg-indigo-900/20 rounded-lg p-3 border border-indigo-900/30">
-                <p className="text-xs text-indigo-300 mb-2">💡 添加书签方法</p>
+                <p className="text-xs text-indigo-300 mb-2">💡 使用方法（需要添加一个注入书签）</p>
                 <div className="text-xs text-gray-400 space-y-1">
-                  <p>🖥️ Chrome/Edge/Firefox：拖拽下方按钮到收藏夹栏</p>
-                  <p>📱 Safari：点击下方按钮 → 分享 → 添加到个人收藏</p>
-                  <p>📱 其他手机浏览器：复制下方链接，手动新建书签并粘贴到URL栏</p>
-                  <p>🎮 使用：打开游戏 → 点击书签 → 页面刷新后自动生效</p>
+                  <p>1️⃣ 添加"注入脚本"到书签（只需一次）</p>
+                  <p>2️⃣ 添加三个大厅书签</p>
+                  <p>3️⃣ 使用：打开游戏 → 先点"注入脚本"书签 → 再点大厅书签</p>
                 </div>
               </div>
+              
+              <div className="bg-slate-800/50 rounded-lg p-3 mb-3">
+                <p className="text-xs text-gray-400 mb-2">🔧 注入脚本（必须添加！）</p>
+                <button
+                  onClick={copyInjectScript}
+                  className={`w-full py-3 rounded-xl font-medium text-sm transition-all ${
+                    copied === -1
+                      ? 'bg-green-600 text-white'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                  }`}
+                >
+                  {copied === -1 ? '✓ 已复制' : '复制注入脚本'}
+                </button>
+                <p className="text-xs text-gray-500 mt-2 text-center">添加到书签，名称：注入</p>
+              </div>
+
               {LOBBIES.map((lobby) => (
                 <a
                   key={lobby.id}
@@ -138,7 +146,7 @@ function App() {
                   onClick={(e) => {
                     e.preventDefault();
                     navigator.clipboard.writeText(getBookmarkUrl(lobby.id)).then(() => {
-                      alert('已复制书签链接！\\n\\n请手动新建书签，将复制的内容粘贴到URL栏\\n书签名填：' + lobby.name);
+                      alert('已复制！手动新建书签，URL粘贴刚才复制的内容，名称填：' + lobby.name);
                     });
                   }}
                 >
@@ -146,22 +154,6 @@ function App() {
                   <span className="font-bold text-lg">{lobby.name}</span>
                 </a>
               ))}
-              <div className="bg-slate-800/50 rounded-lg p-3">
-                <p className="text-xs text-gray-400 mb-2">🔧 自动注入脚本（添加一次即可）</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={copyStartupScript}
-                    className={`flex-1 py-2 rounded-lg font-medium text-xs transition-all ${
-                      copied === -1
-                        ? 'bg-green-600 text-white'
-                        : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                    }`}
-                  >
-                    {copied === -1 ? '✓ 已复制' : '复制注入脚本'}
-                  </button>
-                  <span className="text-xs text-gray-500 self-center">添加到书签，每次刷新自动生效</span>
-                </div>
-              </div>
             </div>
           )}
 
@@ -170,12 +162,26 @@ function App() {
               <div className="bg-amber-900/20 rounded-lg p-3 border border-amber-900/30">
                 <p className="text-xs text-amber-300 mb-2">💡 使用方法</p>
                 <div className="text-xs text-gray-400 space-y-1">
-                  <p>1. 复制对应大厅的脚本</p>
-                  <p>2. 打开游戏页面</p>
-                  <p>3. 桌面端按 F12 → 切换到控制台 → 粘贴运行</p>
-                  <p>4. 移动端：长按地址栏粘贴脚本（部分浏览器支持）</p>
+                  <p>1. 先复制并运行"注入脚本"</p>
+                  <p>2. 再复制大厅脚本运行</p>
+                  <p>3. 页面会自动刷新并切换大厅</p>
                 </div>
               </div>
+              
+              <div className="bg-slate-800/50 rounded-lg p-3 mb-3">
+                <p className="text-xs text-gray-400 mb-2">🔧 注入脚本（先运行这个）</p>
+                <button
+                  onClick={copyInjectScript}
+                  className={`w-full py-3 rounded-xl font-medium text-sm transition-all ${
+                    copied === -1
+                      ? 'bg-green-600 text-white'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                  }`}
+                >
+                  {copied === -1 ? '✓ 已复制' : '复制注入脚本'}
+                </button>
+              </div>
+
               {LOBBIES.map((lobby) => (
                 <div key={lobby.id} className="flex items-center gap-2">
                   <div className={`flex-1 flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r ${lobby.color}`}>
@@ -204,25 +210,46 @@ function App() {
         <div className="glass-panel rounded-2xl p-6 mb-5">
           <div className="text-center mb-4">
             <div className="text-3xl mb-2">📖</div>
-            <h2 className="text-xl font-bold mb-1">使用教程</h2>
+            <h2 className="text-xl font-bold mb-1">详细教程</h2>
           </div>
           <div className="space-y-3 text-sm">
             <div className="flex gap-3">
               <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+              <div>
+                <p className="font-medium text-white">添加注入脚本</p>
+                <p className="text-gray-400 text-xs">复制"注入脚本"添加到书签，名称填"注入"</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+              <div>
+                <p className="font-medium text-white">添加大厅书签</p>
+                <p className="text-gray-400 text-xs">复制三个大厅书签，名称填"Lobby 0/1/2"</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
               <div>
                 <p className="font-medium text-white">打开游戏</p>
                 <p className="text-gray-400 text-xs">在浏览器中打开 territorial.io</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+              <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
               <div>
-                <p className="font-medium text-white">切换大厅</p>
-                <p className="text-gray-400 text-xs">点击书签或运行脚本，页面自动刷新</p>
+                <p className="font-medium text-white">点击注入书签</p>
+                <p className="text-gray-400 text-xs">点击"注入"书签，页面会刷新</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+              <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">5</div>
+              <div>
+                <p className="font-medium text-white">点击大厅书签</p>
+                <p className="text-gray-400 text-xs">点击"Lobby 0/1/2"书签，页面刷新后进入对应大厅</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">6</div>
               <div>
                 <p className="font-medium text-white">开始游戏</p>
                 <p className="text-gray-400 text-xs">点击 多人游戏 进入游戏</p>
@@ -238,18 +265,6 @@ function App() {
           <ul className="text-xs text-gray-400 space-y-1">
             <li>• 官方版：territorial.io</li>
             <li>• FXclient 版：fxclient.github.io/FXclient</li>
-          </ul>
-        </div>
-
-        <div className="bg-amber-900/20 rounded-xl p-4 border border-amber-900/30 mb-5">
-          <h3 className="font-semibold text-amber-400 text-sm mb-2 flex items-center gap-2">
-            <span>📱</span> 各平台操作指南
-          </h3>
-          <ul className="text-xs text-gray-400 space-y-2">
-            <li>• 🖥️ Chrome/Edge/Firefox：拖拽按钮到收藏夹栏</li>
-            <li>• 📱 Safari：点击按钮 → 分享 → 添加到个人收藏</li>
-            <li>• 📱 微信/QQ内置浏览器：复制脚本到地址栏运行</li>
-            <li>• 📱 其他手机浏览器：复制链接手动新建书签</li>
           </ul>
         </div>
 

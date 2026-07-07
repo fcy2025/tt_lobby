@@ -20,7 +20,7 @@ function App() {
         if(u&&typeof u==='string'){
           try{
             var U=new URL(u);
-            if(U.hostname.includes('territorial.io')||U.hostname.includes('fxclient.github.io')){
+            if(U.hostname==='territorial.io'){
               U.hostname='${host}';
               M=U.toString();
             }

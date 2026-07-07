@@ -14,7 +14,7 @@
     let targetUrl = url;
     try {
       const parsedUrl = new URL(url);
-      if (parsedUrl.hostname.includes('territorial.io') || parsedUrl.hostname.includes('fxclient.github.io')) {
+      if (parsedUrl.hostname === 'territorial.io') {
         parsedUrl.hostname = servers[currentLobby];
         targetUrl = parsedUrl.toString();
         console.log('[TT Lobby] WebSocket redirected to:', targetUrl);

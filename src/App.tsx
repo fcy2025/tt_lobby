@@ -1,15 +1,4 @@
-import { useState } from 'react';
-
 function App() {
-  const [copied, setCopied] = useState(false);
-
-  const copyScript = async () => {
-    const script = `(function(){const s=['territorial.io','1.territorial.io','2.territorial.io'];let l=1;const o=window.WebSocket;window.WebSocket=function(u,p){let t=u;try{const r=new URL(u);if(r.hostname.includes('territorial.io')){r.hostname=s[l];t=r.toString()}}catch(e){}return new o(t,p)};window.WebSocket.prototype=o.prototype;window.ttLobby=l;window.addEventListener('message',function(e){if(e.data&&e.data.type==='TT_LOBBY'){l=e.data.lobby;alert('Switched to Lobby '+l)}});console.log('TT Lobby loaded')})();`;
-    await navigator.clipboard.writeText(script);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white">
       <div className="absolute inset-0 overflow-hidden">
@@ -37,11 +26,12 @@ function App() {
             <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
               <pre className="text-xs text-gray-400 whitespace-pre-wrap">
 1. 下载扩展压缩包
-2. 打开 Edge → 扩展 → 管理扩展
-3. 开启"开发人员模式"
-4. 点击"加载已解压的扩展"
-5. 选择下载的扩展文件夹
-6. 访问 territorial.io 即可使用
+2. 解压扩展压缩包到任意文件夹
+3. 打开 Edge → 扩展 → 管理扩展
+4. 开启"开发人员模式"
+5. 点击"加载已解压的扩展"
+6. 选择解压后的扩展文件夹
+7. 访问 territorial.io 即可使用
               </pre>
             </div>
 
@@ -52,38 +42,6 @@ function App() {
               <span>⬇️</span>
               <span>下载扩展压缩包</span>
             </button>
-          </div>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-8 mb-6">
-          <div className="text-center mb-6">
-            <div className="text-5xl mb-4">📋</div>
-            <h2 className="text-2xl font-bold mb-2">备用：手动注入脚本</h2>
-            <p className="text-gray-400">无需安装任何软件，临时使用</p>
-          </div>
-
-          <button
-            onClick={copyScript}
-            className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
-              copied
-                ? 'bg-gradient-to-r from-green-600 to-emerald-600'
-                : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500'
-            }`}
-          >
-            <span>{copied ? '✓' : '📋'}</span>
-            <span>{copied ? '已复制！' : '复制注入脚本'}</span>
-          </button>
-
-          <div className="mt-4 bg-slate-800/50 rounded-xl p-4">
-            <pre className="text-xs text-gray-400 whitespace-pre-wrap">
-使用步骤：
-1. 点击上方按钮复制脚本
-2. 打开 territorial.io
-3. 按 F12 打开开发者工具 → 控制台
-4. 粘贴脚本 → 按回车
-5. 输入 window.ttLobby=0/1/2 切换大厅
-6. 点击 Multiplayer 进入游戏
-            </pre>
           </div>
         </div>
 

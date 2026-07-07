@@ -1,19 +1,11 @@
 import { useState } from 'react';
 import { LOBBIES } from './types';
 
-type ClientType = 'official' | 'fxclient';
-
-const CLIENTS: { type: ClientType; name: string; description: string; icon: string; }[] = [
-  { type: 'official', name: '官方客户端', description: 'Territorial.io 官方游戏', icon: '🏠' },
-  { type: 'fxclient', name: 'FX Client', description: '第三方增强客户端', icon: '✨' },
-];
-
 function App() {
   const [hoveredLobby, setHoveredLobby] = useState<number | null>(null);
-  const [selectedClient, setSelectedClient] = useState<ClientType>('official');
 
   const openLobby = (lobbyId: number) => {
-    const url = `${window.location.origin}/tt_lobby/game.html?lobby=${lobbyId}&client=${selectedClient}`;
+    const url = `${window.location.origin}/tt_lobby/game.html?lobby=${lobbyId}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -31,29 +23,6 @@ function App() {
             TT Lobby Manager
           </h1>
           <p className="text-gray-400">一键进入游戏大厅</p>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-6 mb-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <span>🌐</span> 选择客户端
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            {CLIENTS.map(client => (
-              <button
-                key={client.type}
-                onClick={() => setSelectedClient(client.type)}
-                className={`p-4 rounded-xl transition-all flex flex-col items-center gap-2 ${
-                  selectedClient === client.type
-                    ? 'bg-gradient-to-br from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/30'
-                    : 'bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700'
-                }`}
-              >
-                <span className="text-3xl">{client.icon}</span>
-                <span className="font-medium text-sm">{client.name}</span>
-                <span className="text-xs text-gray-400 text-center">{client.description}</span>
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="space-y-4">
@@ -90,21 +59,42 @@ function App() {
           <ol className="space-y-3 text-sm">
             <li className="flex items-start gap-2">
               <span className="text-indigo-400 font-bold">1.</span>
-              <span className="text-gray-300">选择游戏客户端（官方或 FX）</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-400 font-bold">2.</span>
               <span className="text-gray-300">选择目标大厅（Lobby 0/1/2）</span>
             </li>
             <li className="flex items-start gap-2">
+              <span className="text-indigo-400 font-bold">2.</span>
+              <span className="text-gray-300">游戏自动在新窗口加载</span>
+            </li>
+            <li className="flex items-start gap-2">
               <span className="text-indigo-400 font-bold">3.</span>
-              <span className="text-gray-300">游戏自动加载，脚本自动注入</span>
+              <span className="text-gray-300">脚本已自动注入，无需额外操作</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-indigo-400 font-bold">4.</span>
               <span className="text-gray-300">点击 Multiplayer 进入所选大厅</span>
             </li>
           </ol>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <a
+            href="https://territorial.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-4 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-all text-center"
+          >
+            <span className="text-3xl block mb-2">🏠</span>
+            <span className="text-sm font-medium">官方客户端</span>
+          </a>
+          <a
+            href="https://fxclient.github.io/FXclient"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-4 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-all text-center"
+          >
+            <span className="text-3xl block mb-2">✨</span>
+            <span className="text-sm font-medium">FX Client</span>
+          </a>
         </div>
 
         <div className="mt-6 bg-green-900/20 rounded-xl p-4 border border-green-900/30">

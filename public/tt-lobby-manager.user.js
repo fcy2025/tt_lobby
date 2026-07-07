@@ -58,7 +58,7 @@
                         try{
                             const U=new URL(u);
                             const h=U.hostname;
-                            if(h.includes("territorial.io")){
+                            if(h.includes("territorial.io")||h.includes("fxclient.github.io")){
                                 U.hostname=SERVER;
                                 M=U.toString();
                             }

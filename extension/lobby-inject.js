@@ -2,12 +2,29 @@
   const servers = ['territorial.io', '1.territorial.io', '2.territorial.io'];
   let currentLobby = 1;
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const lobbyParam = urlParams.get('tt_lobby');
+  if (lobbyParam !== null) {
+    const idx = parseInt(lobbyParam);
+    if (idx >= 0 && idx < servers.length) {
+      currentLobby = idx;
+      console.log('[TT Lobby] Lobby from URL:', currentLobby);
+    }
+  }
+
+  const storageHost = localStorage.getItem('tt_lobby_host');
+  const storageId = localStorage.getItem('tt_lobby_id');
+  if (storageHost && storageId) {
+    currentLobby = parseInt(storageId);
+    console.log('[TT Lobby] Lobby from localStorage:', currentLobby);
+  }
+
   const originalWebSocket = window.WebSocket;
   window.WebSocket = function(url, protocols) {
     let targetUrl = url;
     try {
       const parsedUrl = new URL(url);
-      if (parsedUrl.hostname.includes('territorial.io')) {
+      if (parsedUrl.hostname.includes('territorial.io') || parsedUrl.hostname.includes('fxclient.github.io')) {
         parsedUrl.hostname = servers[currentLobby];
         targetUrl = parsedUrl.toString();
         console.log('[TT Lobby] WebSocket redirected to:', targetUrl);
@@ -26,5 +43,7 @@
   });
 
   window.ttLobbyId = currentLobby;
-  console.log('[TT Lobby] Script loaded successfully!');
+  localStorage.removeItem('tt_lobby_host');
+  localStorage.removeItem('tt_lobby_id');
+  console.log('[TT Lobby] Script loaded successfully! Current: Lobby', currentLobby);
 })();

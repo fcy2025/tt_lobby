@@ -8,7 +8,7 @@ const LOBBIES = [
 
 function App() {
   const [copied, setCopied] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'bookmark' | 'script'>('bookmark');
+  const [activeTab, setActiveTab] = useState<'url' | 'bookmark' | 'script'>('url');
 
   const getScript = (lobbyId: number) => {
     const host = LOBBIES[lobbyId].host;
@@ -35,6 +35,13 @@ function App() {
   const getBootScript = () => {
     return `(function(){
       var h=localStorage.getItem('tt_lobby_host');
+      var u=new URL(location.href);
+      var q=u.searchParams.get('tt_lobby');
+      if(q){
+        var ids=[0,1,2];
+        var idx=ids.indexOf(parseInt(q));
+        if(idx>=0){h=['territorial.io','1.territorial.io','2.territorial.io'][idx];localStorage.setItem('tt_lobby_host',h);localStorage.setItem('tt_lobby_id',q)}
+      }
       if(h){
         var O=window.WebSocket;
         window.WebSocket=function(u,p){
@@ -62,6 +69,11 @@ function App() {
 
   const getBookmarkUrl = (lobbyId: number) => {
     return `javascript:${encodeURIComponent(getScript(lobbyId))}`;
+  };
+
+  const getGameUrl = (lobbyId: number, type: 'official' | 'fxclient') => {
+    const base = type === 'official' ? 'https://territorial.io/' : 'https://fxclient.github.io/FXclient/';
+    return `${base}?tt_lobby=${lobbyId}`;
   };
 
   const copyScript = async (lobbyId: number) => {
@@ -96,60 +108,100 @@ function App() {
           <div className="text-center mb-5">
             <div className="text-3xl mb-2">⚡</div>
             <h2 className="text-xl font-bold mb-1">快速切换大厅</h2>
-            <p className="text-gray-400 text-xs">支持官方版和FXclient版，自动切换并刷新</p>
+            <p className="text-gray-400 text-xs">支持官方版和FXclient版</p>
           </div>
 
           <div className="flex gap-2 mb-5">
             <button
+              onClick={() => setActiveTab('url')}
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'url'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-800/50 text-gray-400 hover:bg-slate-700/50'
+              }`}
+            >
+              🔗 链接直达
+            </button>
+            <button
               onClick={() => setActiveTab('bookmark')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-all ${
                 activeTab === 'bookmark'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-slate-800/50 text-gray-400 hover:bg-slate-700/50'
               }`}
             >
-              📌 书签大法
+              📌 书签
             </button>
             <button
               onClick={() => setActiveTab('script')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-all ${
                 activeTab === 'script'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-slate-800/50 text-gray-400 hover:bg-slate-700/50'
               }`}
             >
-              📋 复制脚本
+              📋 脚本
             </button>
           </div>
+
+          {activeTab === 'url' && (
+            <div className="space-y-3">
+              <div className="bg-indigo-900/20 rounded-lg p-3 border border-indigo-900/30">
+                <p className="text-xs text-indigo-300 mb-1">💡 使用方法</p>
+                <p className="text-xs text-gray-400">点击下方按钮直接进入对应大厅，或复制链接分享给好友</p>
+              </div>
+              {LOBBIES.map((lobby) => (
+                <div key={lobby.id} className={`rounded-xl bg-gradient-to-r ${lobby.color} overflow-hidden`}>
+                  <div className="flex items-center gap-3 p-3">
+                    <span className="text-2xl">{lobby.icon}</span>
+                    <div className="flex-1">
+                      <p className="font-bold text-sm">{lobby.name}</p>
+                    </div>
+                  </div>
+                  <div className="bg-black/20 px-3 py-2 grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => window.open(getGameUrl(lobby.id, 'official'), '_blank')}
+                      className="py-2 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all"
+                    >
+                      官方版
+                    </button>
+                    <button
+                      onClick={() => window.open(getGameUrl(lobby.id, 'fxclient'), '_blank')}
+                      className="py-2 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all"
+                    >
+                      FXclient
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {activeTab === 'bookmark' && (
             <div className="space-y-3">
               <div className="bg-indigo-900/20 rounded-lg p-3 border border-indigo-900/30">
-                <p className="text-xs text-indigo-300 mb-2">💡 添加到书签</p>
+                <p className="text-xs text-indigo-300 mb-2">💡 添加书签</p>
                 <div className="text-xs text-gray-400 space-y-1">
-                  <p>🖥️ 桌面端：右键按钮 → "添加到书签"</p>
-                  <p>📱 移动端：长按按钮 → "添加到收藏夹"</p>
-                  <p>✏️ 建议书签名：Lobby 0 / Lobby 1 / Lobby 2</p>
+                  <p>🖥️ 桌面端：拖拽下方按钮到收藏夹栏</p>
+                  <p>📱 移动端：请使用"链接直达"或"脚本"方式</p>
                 </div>
               </div>
               {LOBBIES.map((lobby) => (
                 <a
                   key={lobby.id}
                   href={getBookmarkUrl(lobby.id)}
-                  className={`flex items-center justify-between w-full p-3 rounded-xl bg-gradient-to-r ${lobby.color} hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-pointer`}
+                  draggable={true}
+                  className={`flex items-center gap-3 w-full p-3 rounded-xl bg-gradient-to-r ${lobby.color} hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-grab active:cursor-grabbing`}
                   onClick={(e) => {
                     e.preventDefault();
-                    alert('桌面端：右键此按钮 → 添加到书签\n\n移动端：长按此按钮 → 添加到收藏夹\n\n建议书签名称：Lobby ' + lobby.id);
+                    alert('请将此按钮拖拽到浏览器收藏夹栏');
                   }}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{lobby.icon}</span>
-                    <div className="text-left">
-                      <p className="font-bold text-sm">{lobby.name}</p>
-                      <p className="text-xs text-white/70">{lobby.desc}</p>
-                    </div>
+                  <span className="text-2xl">{lobby.icon}</span>
+                  <div className="flex-1">
+                    <p className="font-bold text-sm">{lobby.name}</p>
                   </div>
-                  <span className="text-xs bg-white/20 px-2 py-1 rounded-md">拖/长按</span>
+                  <span className="text-xs bg-white/20 px-2 py-1 rounded-md">拖拽</span>
                 </a>
               ))}
             </div>
@@ -167,7 +219,6 @@ function App() {
                     <span className="text-xl">{lobby.icon}</span>
                     <div>
                       <p className="font-bold text-sm">{lobby.name}</p>
-                      <p className="text-xs text-white/70">{lobby.desc}</p>
                     </div>
                   </div>
                   <button
@@ -198,13 +249,14 @@ function App() {
           <div className="flex gap-2">
             <a
               href={`javascript:${encodeURIComponent(getBootScript())}`}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:scale-[1.02] active:scale-[0.98] transition-transform text-center font-bold text-sm"
+              draggable={true}
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:scale-[1.02] active:scale-[0.98] transition-transform text-center font-bold text-sm cursor-grab active:cursor-grabbing"
               onClick={(e) => {
                 e.preventDefault();
-                alert('桌面端：右键此按钮 → 添加到书签\n\n移动端：长按此按钮 → 添加到收藏夹\n\n建议书签名称：TT Lobby');
+                alert('请将此按钮拖拽到浏览器收藏夹栏');
               }}
             >
-              📌 添加书签
+              📌 TT Lobby
             </a>
             <button
               onClick={copyBootScript}
@@ -228,15 +280,15 @@ function App() {
             <div className="flex gap-3">
               <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
               <div>
-                <p className="font-medium text-white">添加书签</p>
-                <p className="text-gray-400 text-xs">将书签添加到浏览器</p>
+                <p className="font-medium text-white">选择大厅</p>
+                <p className="text-gray-400 text-xs">选择目标大厅和游戏版本</p>
               </div>
             </div>
             <div className="flex gap-3">
               <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
               <div>
-                <p className="font-medium text-white">点书签切换</p>
-                <p className="text-gray-400 text-xs">点击对应大厅的书签，自动刷新切换</p>
+                <p className="font-medium text-white">进入游戏</p>
+                <p className="text-gray-400 text-xs">点击按钮直接进入对应大厅</p>
               </div>
             </div>
             <div className="flex gap-3">

@@ -16,6 +16,7 @@ function App() {
       if(!window._ttOrigWS){window._ttOrigWS=window.WebSocket}
       var O=window._ttOrigWS;
       var done=false;
+      var active=0;
       var N=function(u,p){
         var M=u;
         if(!done&&u&&typeof u==='string'){
@@ -28,7 +29,10 @@ function App() {
             }
           }catch(e){}
         }
-        return p?new O(M,p):new O(M);
+        var w=p?new O(M,p):new O(M);
+        active++;
+        w.addEventListener('close',function(){active--;if(active<=0){done=false;active=0;}});
+        return w;
       };
       N.prototype=O.prototype;
       N.toString=function(){return O.toString()};

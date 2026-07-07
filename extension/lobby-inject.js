@@ -11,6 +11,7 @@
 
   const originalWebSocket = window.WebSocket;
   let redirected = false;
+  let activeCount = 0;
   window.WebSocket = function(url, protocols) {
     let targetUrl = url;
     if (!redirected) {
@@ -24,7 +25,16 @@
         }
       } catch(e) {}
     }
-    return new originalWebSocket(targetUrl, protocols);
+    const ws = new originalWebSocket(targetUrl, protocols);
+    activeCount++;
+    ws.addEventListener('close', () => {
+      activeCount--;
+      if (activeCount <= 0) {
+        redirected = false;
+        activeCount = 0;
+      }
+    });
+    return ws;
   };
   window.WebSocket.prototype = originalWebSocket.prototype;
   window.WebSocket.toString = function() { return originalWebSocket.toString(); };

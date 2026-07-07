@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && node scripts/download-game.cjs",
-    "download-game": "node scripts/download-game.cjs",
+    "build": "tsc && vite build && node scripts/package-extension.cjs",
+    "package-extension": "node scripts/package-extension.cjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

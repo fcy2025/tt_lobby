@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { LOBBIES } from './types';
 
 function App() {
-  const [hoveredLobby, setHoveredLobby] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  const openLobby = (lobbyId: number) => {
-    const url = `${window.location.origin}/tt_lobby/game.html?lobby=${lobbyId}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const copyScript = async () => {
+    const script = `(function(){const s=['territorial.io','1.territorial.io','2.territorial.io'];let l=1;const o=WebSocket;WebSocket=function(u,p){let t=u;try{const r=new URL(u);if(r.hostname.includes('territorial.io')){r.hostname=s[l];t=r.toString()}}catch(e){}return new o(t,p)};window.ttLobby=l;window.addEventListener('message',function(e){if(e.data&&e.data.type==='TT_LOBBY'){l=e.data.lobby;alert('Switched to Lobby '+l)}});console.log('TT Lobby loaded')})();`;
+    await navigator.clipboard.writeText(script);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -16,95 +17,130 @@ function App() {
         <div className="absolute -bottom-60 -left-60 w-120 h-120 bg-purple-500/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="relative max-w-lg mx-auto px-4 py-12">
-        <div className="text-center mb-8">
-          <div className="text-7xl mb-4">🏰</div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-2">
+      <div className="relative max-w-2xl mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+          <div className="text-8xl mb-6">🏰</div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-3">
             TT Lobby Manager
           </h1>
-          <p className="text-gray-400">一键进入游戏大厅</p>
+          <p className="text-gray-400 text-lg">Territorial.io 大厅切换工具</p>
         </div>
 
-        <div className="space-y-4">
-          {LOBBIES.map(lobby => (
-            <button
-              key={lobby.id}
-              onClick={() => openLobby(lobby.id)}
-              onMouseEnter={() => setHoveredLobby(lobby.id)}
-              onMouseLeave={() => setHoveredLobby(null)}
-              className={`w-full p-5 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-between group ${
-                hoveredLobby === lobby.id
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/30 scale-[1.02]'
-                  : 'bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <span className="text-4xl group-hover:scale-110 transition-transform">{lobby.icon}</span>
-                <div className="text-left">
-                  <p className="text-white">{lobby.name}</p>
-                  <p className="text-sm text-gray-400">{lobby.description}</p>
-                </div>
-              </div>
-              <span className={`text-2xl transition-transform ${hoveredLobby === lobby.id ? 'translate-x-2' : ''}`}>
-                →
-              </span>
-            </button>
-          ))}
+        <div className="glass-panel rounded-2xl p-8 mb-6">
+          <div className="text-center">
+            <div className="text-5xl mb-4">🔌</div>
+            <h2 className="text-2xl font-bold mb-2">推荐：安装浏览器扩展</h2>
+            <p className="text-gray-400 mb-6">安装后访问游戏自动生效，一键切换大厅</p>
+            
+            <div className="space-y-4">
+              <a
+                href="https://microsoftedge.microsoft.com/addons/detail/tt-lobby-manager/xxxxxx"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-xl font-bold text-lg transition-all shadow-lg shadow-blue-500/30"
+              >
+                <span>🪟</span>
+                <span>在 Edge 商店安装</span>
+              </a>
+              
+              <a
+                href="https://chrome.google.com/webstore/detail/tt-lobby-manager/xxxxxx"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 rounded-xl font-bold text-lg transition-all"
+              >
+                <span>🧭</span>
+                <span>在 Chrome 商店安装</span>
+              </a>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-8 glass-panel rounded-2xl p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <span>✨</span> 使用说明
-          </h3>
-          <ol className="space-y-3 text-sm">
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-400 font-bold">1.</span>
-              <span className="text-gray-300">选择目标大厅（Lobby 0/1/2）</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-400 font-bold">2.</span>
-              <span className="text-gray-300">游戏自动在新窗口加载</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-400 font-bold">3.</span>
-              <span className="text-gray-300">脚本已自动注入，无需额外操作</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-indigo-400 font-bold">4.</span>
-              <span className="text-gray-300">点击 Multiplayer 进入所选大厅</span>
-            </li>
-          </ol>
-        </div>
+        <div className="glass-panel rounded-2xl p-8 mb-6">
+          <div className="text-center mb-6">
+            <div className="text-5xl mb-4">📦</div>
+            <h2 className="text-2xl font-bold mb-2">手动安装扩展（开发版）</h2>
+            <p className="text-gray-400">适用于无法访问应用商店的用户</p>
+          </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <a
-            href="https://territorial.io"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-4 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-all text-center"
+          <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
+            <pre className="text-xs text-gray-400 whitespace-pre-wrap">
+1. 下载扩展压缩包
+2. 打开 Edge → 扩展 → 管理扩展
+3. 开启"开发人员模式"
+4. 点击"加载已解压的扩展"
+5. 选择下载的扩展文件夹
+6. 访问 territorial.io 即可使用
+            </pre>
+          </div>
+
+          <button
+            onClick={() => window.open('/extension.zip', '_blank')}
+            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
           >
-            <span className="text-3xl block mb-2">🏠</span>
-            <span className="text-sm font-medium">官方客户端</span>
-          </a>
-          <a
-            href="https://fxclient.github.io/FXclient"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-4 bg-slate-800/50 hover:bg-slate-700/50 rounded-xl transition-all text-center"
-          >
-            <span className="text-3xl block mb-2">✨</span>
-            <span className="text-sm font-medium">FX Client</span>
-          </a>
+            <span>⬇️</span>
+            <span>下载扩展压缩包</span>
+          </button>
         </div>
 
-        <div className="mt-6 bg-green-900/20 rounded-xl p-4 border border-green-900/30">
+        <div className="glass-panel rounded-2xl p-8 mb-6">
+          <div className="text-center mb-6">
+            <div className="text-5xl mb-4">📋</div>
+            <h2 className="text-2xl font-bold mb-2">备用：手动注入脚本</h2>
+            <p className="text-gray-400">无需安装任何软件，临时使用</p>
+          </div>
+
+          <button
+            onClick={copyScript}
+            className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+              copied
+                ? 'bg-gradient-to-r from-green-600 to-emerald-600'
+                : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500'
+            }`}
+          >
+            <span>{copied ? '✓' : '📋'}</span>
+            <span>{copied ? '已复制！' : '复制注入脚本'}</span>
+          </button>
+
+          <div className="mt-4 bg-slate-800/50 rounded-xl p-4">
+            <pre className="text-xs text-gray-400 whitespace-pre-wrap">
+使用步骤：
+1. 点击上方按钮复制脚本
+2. 打开 territorial.io
+3. 按 F12 打开开发者工具 → 控制台
+4. 粘贴脚本 → 按回车
+5. 输入 window.ttLobby=0/1/2 切换大厅
+6. 点击 Multiplayer 进入游戏
+            </pre>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="glass-panel rounded-xl p-4 text-center">
+            <div className="text-3xl mb-2">🟢</div>
+            <p className="font-bold">Lobby 0</p>
+            <p className="text-xs text-gray-400">备用大厅</p>
+          </div>
+          <div className="glass-panel rounded-xl p-4 text-center">
+            <div className="text-3xl mb-2">🔴</div>
+            <p className="font-bold">Lobby 1</p>
+            <p className="text-xs text-gray-400">默认主大厅</p>
+          </div>
+          <div className="glass-panel rounded-xl p-4 text-center">
+            <div className="text-3xl mb-2">🟡</div>
+            <p className="font-bold">Lobby 2</p>
+            <p className="text-xs text-gray-400">备选大厅</p>
+          </div>
+        </div>
+
+        <div className="bg-green-900/20 rounded-xl p-4 border border-green-900/30">
           <h3 className="font-semibold text-green-400 text-sm mb-2 flex items-center gap-2">
             <span>✅</span> 安全提示
           </h3>
           <ul className="text-xs text-gray-400 space-y-1">
-            <li>• 使用本工具不会触发账号封禁</li>
-            <li>• 无需安装任何插件或扩展</li>
-            <li>• 支持所有平台和浏览器</li>
+            <li>• 使用浏览器扩展方案不会触发账号封禁</li>
+            <li>• 扩展直接在官方页面运行，Origin 头正确</li>
+            <li>• 无需安装任何额外软件</li>
           </ul>
         </div>
 

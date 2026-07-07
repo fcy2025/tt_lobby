@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "TT Lobby Manager",
+  "version": "1.0.0",
+  "description": "一键切换 Territorial.io 游戏大厅",
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["https://territorial.io/*"],
+      "js": ["content-script.js"],
+      "css": ["content-style.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["lobby-inject.js"],
+      "matches": ["https://territorial.io/*"]
+    }
+  ]
+}

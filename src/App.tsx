@@ -12,7 +12,11 @@ function App() {
 
   const getScript = (lobbyId: number) => {
     const host = LOBBIES[lobbyId].host;
-    return `(function(){var O=window.WebSocket;window.WebSocket=function(u,p){var M=u;if(u&&typeof u==="string"){try{var U=new URL(u);if(U.hostname.includes("territorial.io")){U.hostname="${host}";M=U.toString()}}catch(e){}}return p?new O(M,p):new O(M)};window.WebSocket.prototype=O.prototype;alert("已切换到 Lobby ${lobbyId}！点击 Multiplayer 进入游戏")})();`;
+    return `(function(){localStorage.setItem('tt_lobby_host','${host}');localStorage.setItem('tt_lobby_id','${lobbyId}');if(!location.href.includes('territorial.io')){location.href='https://territorial.io/'}else{location.reload()}})();`;
+  };
+
+  const getBootScript = () => {
+    return `(function(){var h=localStorage.getItem('tt_lobby_host');if(h){var O=window.WebSocket;window.WebSocket=function(u,p){var M=u;if(u&&typeof u==='string'){try{var U=new URL(u);if(U.hostname.includes('territorial.io')){U.hostname=h;M=U.toString()}}catch(e){}}return p?new O(M,p):new O(M)};window.WebSocket.prototype=O.prototype;var id=localStorage.getItem('tt_lobby_id');console.log('TT Lobby: 已切换到 Lobby '+id+' ('+h+')')}localStorage.removeItem('tt_lobby_host');localStorage.removeItem('tt_lobby_id')})();`;
   };
 
   const getBookmarkUrl = (lobbyId: number) => {
@@ -44,8 +48,8 @@ function App() {
         <div className="glass-panel rounded-2xl p-6 mb-5">
           <div className="text-center mb-5">
             <div className="text-3xl mb-2">⚡</div>
-            <h2 className="text-xl font-bold mb-1">快速进入大厅</h2>
-            <p className="text-gray-400 text-xs">选择目标大厅，使用下方任一方式切换</p>
+            <h2 className="text-xl font-bold mb-1">快速切换大厅</h2>
+            <p className="text-gray-400 text-xs">选择目标大厅，自动切换并刷新页面</p>
           </div>
 
           <div className="flex gap-2 mb-5">
@@ -75,7 +79,7 @@ function App() {
             <div className="space-y-3">
               <div className="bg-indigo-900/20 rounded-lg p-3 border border-indigo-900/30">
                 <p className="text-xs text-indigo-300 mb-1">💡 使用方法</p>
-                <p className="text-xs text-gray-400">长按下方按钮 → 添加到书签/收藏夹 → 在游戏页面点击书签即可切换</p>
+                <p className="text-xs text-gray-400">长按下方按钮 → 添加到书签/收藏夹 → 在游戏页面点击书签自动切换</p>
               </div>
               {LOBBIES.map((lobby) => (
                 <a
@@ -133,25 +137,23 @@ function App() {
 
         <div className="glass-panel rounded-2xl p-6 mb-5">
           <div className="text-center mb-4">
-            <div className="text-3xl mb-2">🔗</div>
-            <h2 className="text-xl font-bold mb-1">直接访问</h2>
-            <p className="text-gray-400 text-xs">点击下方链接直接进入对应大厅</p>
+            <div className="text-3xl mb-2">🛡️</div>
+            <h2 className="text-xl font-bold mb-1">持久化脚本</h2>
+            <p className="text-gray-400 text-xs">添加到书签，每次打开游戏自动应用大厅设置</p>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {LOBBIES.map((lobby) => (
-              <a
-                key={lobby.id}
-                href={`https://${lobby.host}/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex flex-col items-center p-3 rounded-xl bg-gradient-to-br ${lobby.color} hover:scale-105 active:scale-95 transition-transform`}
-              >
-                <span className="text-2xl mb-1">{lobby.icon}</span>
-                <span className="text-xs font-bold">{lobby.name}</span>
-                <span className="text-[10px] text-white/70 mt-0.5">点击进入</span>
-              </a>
-            ))}
+          <div className="bg-slate-800/50 rounded-lg p-3 mb-4">
+            <p className="text-xs text-gray-400">将此脚本添加到书签，每次访问游戏时自动检查并应用上次的大厅设置</p>
           </div>
+          <a
+            href={`javascript:${encodeURIComponent(getBootScript())}`}
+            className="block w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:scale-[1.02] active:scale-[0.98] transition-transform text-center font-bold"
+            onClick={(e) => {
+              e.preventDefault();
+              alert('请长按此按钮，选择"添加到书签"或"添加到收藏夹"');
+            }}
+          >
+            📌 添加自动应用书签
+          </a>
         </div>
 
         <div className="glass-panel rounded-2xl p-6 mb-5">
@@ -171,7 +173,7 @@ function App() {
               <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
               <div>
                 <p className="font-medium text-white">切换大厅</p>
-                <p className="text-gray-400 text-xs">用书签或脚本切换到目标大厅</p>
+                <p className="text-gray-400 text-xs">点击书签或运行脚本，自动刷新并切换</p>
               </div>
             </div>
             <div className="flex gap-3">

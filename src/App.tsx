@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LOBBIES } from './types';
 
-const WORKER_URL = 'https://tt-lobby-manager.workers.dev';
+const WORKER_URL = 'https://tt-lobby-manager.fcy202404160314english.workers.dev';
 
 function App() {
   const [hoveredLobby, setHoveredLobby] = useState<number | null>(null);

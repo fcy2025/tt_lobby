@@ -2,16 +2,6 @@
   const servers = ['territorial.io', '1.territorial.io', '2.territorial.io'];
   let currentLobby = 1;
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const lobbyParam = urlParams.get('tt_lobby');
-  if (lobbyParam !== null) {
-    const idx = parseInt(lobbyParam);
-    if (idx >= 0 && idx < servers.length) {
-      currentLobby = idx;
-      console.log('[TT Lobby] Lobby from URL:', currentLobby);
-    }
-  }
-
   const storageHost = localStorage.getItem('tt_lobby_host');
   const storageId = localStorage.getItem('tt_lobby_id');
   if (storageHost && storageId) {
@@ -37,8 +27,10 @@
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'TT_LOBBY_SWITCH') {
       currentLobby = event.data.lobbyId;
+      localStorage.setItem('tt_lobby_host', servers[currentLobby]);
+      localStorage.setItem('tt_lobby_id', currentLobby.toString());
       console.log('[TT Lobby] Lobby switched to:', currentLobby);
-      alert('✓ 已切换到 Lobby ' + currentLobby + '！请点击 Multiplayer 进入游戏');
+      location.reload();
     }
   });
 

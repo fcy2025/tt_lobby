@@ -10,19 +10,24 @@
   }
 
   const originalWebSocket = window.WebSocket;
+  let redirected = false;
   window.WebSocket = function(url, protocols) {
     let targetUrl = url;
-    try {
-      const parsedUrl = new URL(url);
-      if (parsedUrl.hostname === 'territorial.io') {
-        parsedUrl.hostname = servers[currentLobby];
-        targetUrl = parsedUrl.toString();
-        console.log('[TT Lobby] WebSocket redirected to:', targetUrl);
-      }
-    } catch(e) {}
+    if (!redirected) {
+      try {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.hostname.includes('territorial.io')) {
+          parsedUrl.hostname = servers[currentLobby];
+          targetUrl = parsedUrl.toString();
+          redirected = true;
+          console.log('[TT Lobby] WebSocket redirected to:', targetUrl);
+        }
+      } catch(e) {}
+    }
     return new originalWebSocket(targetUrl, protocols);
   };
   window.WebSocket.prototype = originalWebSocket.prototype;
+  window.WebSocket.toString = function() { return originalWebSocket.toString(); };
 
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'TT_LOBBY_SWITCH') {

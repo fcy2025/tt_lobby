@@ -15,20 +15,24 @@ function App() {
     return `(function(){
       if(!window._ttOrigWS){window._ttOrigWS=window.WebSocket}
       var O=window._ttOrigWS;
-      window.WebSocket=function(u,p){
+      var done=false;
+      var N=function(u,p){
         var M=u;
-        if(u&&typeof u==='string'){
+        if(!done&&u&&typeof u==='string'){
           try{
             var U=new URL(u);
-            if(U.hostname==='territorial.io'){
+            if(U.hostname.includes('territorial.io')){
               U.hostname='${host}';
               M=U.toString();
+              done=true;
             }
           }catch(e){}
         }
         return p?new O(M,p):new O(M);
       };
-      window.WebSocket.prototype=O.prototype;
+      N.prototype=O.prototype;
+      N.toString=function(){return O.toString()};
+      window.WebSocket=N;
       alert('✓ 已切换到 Lobby ${lobbyId}\\n请点击 多人游戏 进入游戏');
     })();`.replace(/\n\s*/g, '');
   };

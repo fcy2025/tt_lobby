@@ -4,7 +4,7 @@ function App() {
   const [copied, setCopied] = useState(false);
 
   const copyScript = async () => {
-    const script = `(function(){const s=['territorial.io','1.territorial.io','2.territorial.io'];let l=1;const o=WebSocket;WebSocket=function(u,p){let t=u;try{const r=new URL(u);if(r.hostname.includes('territorial.io')){r.hostname=s[l];t=r.toString()}}catch(e){}return new o(t,p)};window.ttLobby=l;window.addEventListener('message',function(e){if(e.data&&e.data.type==='TT_LOBBY'){l=e.data.lobby;alert('Switched to Lobby '+l)}});console.log('TT Lobby loaded')})();`;
+    const script = `(function(){const s=['territorial.io','1.territorial.io','2.territorial.io'];let l=1;const o=window.WebSocket;window.WebSocket=function(u,p){let t=u;try{const r=new URL(u);if(r.hostname.includes('territorial.io')){r.hostname=s[l];t=r.toString()}}catch(e){}return new o(t,p)};window.WebSocket.prototype=o.prototype;window.ttLobby=l;window.addEventListener('message',function(e){if(e.data&&e.data.type==='TT_LOBBY'){l=e.data.lobby;alert('Switched to Lobby '+l)}});console.log('TT Lobby loaded')})();`;
     await navigator.clipboard.writeText(script);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -26,61 +26,33 @@ function App() {
           <p className="text-gray-400 text-lg">Territorial.io 大厅切换工具</p>
         </div>
 
+
+
         <div className="glass-panel rounded-2xl p-8 mb-6">
           <div className="text-center">
             <div className="text-5xl mb-4">🔌</div>
             <h2 className="text-2xl font-bold mb-2">推荐：安装浏览器扩展</h2>
             <p className="text-gray-400 mb-6">安装后访问游戏自动生效，一键切换大厅</p>
             
-            <div className="space-y-4">
-              <a
-                href="https://microsoftedge.microsoft.com/addons/detail/tt-lobby-manager/xxxxxx"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-xl font-bold text-lg transition-all shadow-lg shadow-blue-500/30"
-              >
-                <span>🪟</span>
-                <span>在 Edge 商店安装</span>
-              </a>
-              
-              <a
-                href="https://chrome.google.com/webstore/detail/tt-lobby-manager/xxxxxx"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 rounded-xl font-bold text-lg transition-all"
-              >
-                <span>🧭</span>
-                <span>在 Chrome 商店安装</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-8 mb-6">
-          <div className="text-center mb-6">
-            <div className="text-5xl mb-4">📦</div>
-            <h2 className="text-2xl font-bold mb-2">手动安装扩展（开发版）</h2>
-            <p className="text-gray-400">适用于无法访问应用商店的用户</p>
-          </div>
-
-          <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
-            <pre className="text-xs text-gray-400 whitespace-pre-wrap">
+            <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
+              <pre className="text-xs text-gray-400 whitespace-pre-wrap">
 1. 下载扩展压缩包
 2. 打开 Edge → 扩展 → 管理扩展
 3. 开启"开发人员模式"
 4. 点击"加载已解压的扩展"
 5. 选择下载的扩展文件夹
 6. 访问 territorial.io 即可使用
-            </pre>
-          </div>
+              </pre>
+            </div>
 
-          <button
-            onClick={() => window.open('/extension.zip', '_blank')}
-            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-          >
-            <span>⬇️</span>
-            <span>下载扩展压缩包</span>
-          </button>
+            <button
+              onClick={() => window.open('/tt_lobby/extension.zip', '_blank')}
+              className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+            >
+              <span>⬇️</span>
+              <span>下载扩展压缩包</span>
+            </button>
+          </div>
         </div>
 
         <div className="glass-panel rounded-2xl p-8 mb-6">

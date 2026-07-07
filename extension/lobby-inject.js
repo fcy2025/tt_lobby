@@ -15,6 +15,7 @@
     } catch(e) {}
     return new originalWebSocket(targetUrl, protocols);
   };
+  window.WebSocket.prototype = originalWebSocket.prototype;
 
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'TT_LOBBY_SWITCH') {

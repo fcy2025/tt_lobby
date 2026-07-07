@@ -51,11 +51,23 @@
         script.textContent = `
             (function(){
                 const SERVER="${targetHost}";
-                const S=["territorial.io","1.territorial.io","2.territorial.io"];
-                function p(){try{for(const k in window){try{const o=window[k];if(!o||typeof o!=="object")continue;if(o.z&&typeof o.z==="object"){if(o.z.aHM!==undefined&&o.z.aUa&&Array.isArray(o.z.aUa)){o.z.aHM=3;o.z.aUa=S;return 1}}if(o.aHM!==undefined&&o.aUa&&Array.isArray(o.aUa)){let t=!1;for(const i of o.aUa){if(i&&i.includes&&i.includes("territorial.io")){t=!0;break}}if(t){o.aHM=3;o.aUa=S;return 1}}for(const s in o){try{const so=o[s];if(!so||typeof so!=="object")continue;if(so.aHM!==undefined&&so.aUa&&Array.isArray(so.aUa)){let t=!1;for(const i of so.aUa){if(i&&i.includes&&i.includes("territorial.io")){t=!0;break}}if(t){so.aHM=3;so.aUa=S;return 1}}}catch(e){}}}catch(e){}}return 0}
-                let a=0;const m=setInterval(()=>{if(p()||a>=200)clearInterval(m);a++},50);
-                setTimeout(()=>{clearInterval(m);p()},20000);
-                const O=window.WebSocket;window.WebSocket=function(u,p){let M=u;if(u&&typeof u==="string"){try{const U=new URL(u),h=U.hostname;if(/^[12]\\.territorial\\.io$/.test(h)){U.hostname=SERVER;M=U.toString()}}catch(e){}}const w=p?new O(M,p):new O(M);return w};window.WebSocket.prototype=O.prototype;
+                const O=window.WebSocket;
+                window.WebSocket=function(u,p){
+                    let M=u;
+                    if(u&&typeof u==="string"){
+                        try{
+                            const U=new URL(u);
+                            const h=U.hostname;
+                            if(h.includes("territorial.io")){
+                                U.hostname=SERVER;
+                                M=U.toString();
+                            }
+                        }catch(e){}
+                    }
+                    const w=p?new O(M,p):new O(M);
+                    return w;
+                };
+                window.WebSocket.prototype=O.prototype;
             })();
         `;
         document.documentElement.appendChild(script);

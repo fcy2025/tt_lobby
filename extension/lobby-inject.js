@@ -16,7 +16,7 @@
     let isTT = false;
     try {
       const parsedUrl = new URL(url);
-      if (parsedUrl.hostname.includes('territorial.io')) {
+      if (parsedUrl.hostname.includes('territorial.io') && parsedUrl.pathname === '/s52/') {
         isTT = true;
         parsedUrl.hostname = servers[currentLobby];
         targetUrl = parsedUrl.toString();

@@ -14,32 +14,19 @@ function App() {
     const host = LOBBIES[lobbyId].host;
     return `(function(){
       if(!window._ttOrigWS){window._ttOrigWS=window.WebSocket}
-      if(!window._ttConns){window._ttConns=[]}
       var O=window._ttOrigWS;
-      var conns=window._ttConns;
-      try{for(var i=0;i<conns.length;i++){try{conns[i].close()}catch(e){}}}catch(e){}
-      conns.length=0;
       var N=function(u,p){
         var M=u;
-        var isTT=false;
         if(u&&typeof u==='string'){
           try{
             var U=new URL(u);
-            if(U.hostname.includes('territorial.io')){
-              isTT=true;
+            if(U.hostname.includes('territorial.io')&&U.pathname==='/s52/'){
               U.hostname='${host}';
               M=U.toString();
             }
           }catch(e){}
         }
         var w=p?new O(M,p):new O(M);
-        if(isTT){
-          conns.push(w);
-          w.addEventListener('close',function(){
-            var idx=conns.indexOf(w);
-            if(idx>=0)conns.splice(idx,1);
-          });
-        }
         return w;
       };
       N.prototype=O.prototype;
@@ -47,7 +34,12 @@ function App() {
       N.toString=function(){return O.toString()};
       N.OPEN=O.OPEN;N.CLOSED=O.CLOSED;N.CLOSING=O.CLOSING;N.CONNECTING=O.CONNECTING;
       window.WebSocket=N;
-      alert('✓ 已切换到 Lobby ${lobbyId}\\n请点击 多人游戏 进入游戏');
+      if(window.location.hostname.includes('territorial.io')||window.location.hostname.includes('fxclient')){
+        alert('✓ 已切换到 Lobby ${lobbyId}\\n页面将刷新');
+        setTimeout(function(){window.location.reload()},100);
+      }else{
+        alert('✓ 请打开游戏页面后再使用');
+      }
     })();`.replace(/\n\s*/g, '');
   };
 

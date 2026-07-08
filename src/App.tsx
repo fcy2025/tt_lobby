@@ -17,15 +17,7 @@ function App() {
       if(!window._ttConns){window._ttConns=[]}
       var O=window._ttOrigWS;
       var conns=window._ttConns;
-      for(var i=conns.length-1;i>=0;i--){
-        try{
-          var w=conns[i];
-          if(w.readyState===1){w.close();}
-          else if(w.readyState===0){
-            w.addEventListener('open',function(){try{this.close()}catch(e){}},{once:true});
-          }
-        }catch(e){}
-      }
+      try{for(var i=0;i<conns.length;i++){try{conns[i].close()}catch(e){}}}catch(e){}
       conns.length=0;
       var N=function(u,p){
         var M=u;

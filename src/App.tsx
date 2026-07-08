@@ -106,30 +106,31 @@ function App() {
           <div className="text-center mb-5">
             <div className="text-3xl mb-2">📌</div>
             <h2 className="text-xl font-bold mb-1">快捷书签</h2>
-            <p className="text-gray-400 text-xs">拖拽下方按钮到收藏夹栏</p>
+            <p className="text-gray-400 text-xs">点击按钮复制后添加到书签</p>
           </div>
 
           <div className="bg-emerald-900/20 rounded-lg p-3 border border-emerald-900/30 mb-4">
             <p className="text-xs text-emerald-300 space-y-1">
-              <b>使用方法：</b><br/>
-              1. 拖拽下方按钮到浏览器收藏夹栏<br/>
-              2. 打开游戏 territorial.io<br/>
-              3. 点击书签 → 启用 Lobby 0<br/>
-              4. 退出大厅后重新进入即可
+              <b>📱 移动端：</b><br/>
+              1. 点击下方按钮复制代码<br/>
+              2. 在浏览器新建书签<br/>
+              3. 名称填"🏰 Lobby 0"<br/>
+              4. 网址粘贴刚才复制的代码<br/>
+              <b>🖥️ 桌面端：</b><br/>
+              拖拽下方按钮到收藏夹栏
             </p>
           </div>
 
-          <a href={bookmarkUrl} draggable={true}
-            className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-grab active:cursor-grabbing select-none shadow-lg shadow-emerald-500/30 mb-4"
-            onClick={(e) => { e.preventDefault(); copy(bookmarkUrl); }}>
+          <button onClick={() => copy(bookmarkUrl)}
+            className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-emerald-500/30 mb-4">
             <span className="text-2xl">🏰</span>
             <span className="font-bold text-lg">Lobby 0</span>
-            {copied && <span className="text-xs text-white/90">已复制</span>}
-          </a>
+            {copied && <span className="text-xs text-white/90">已复制，去添加书签</span>}
+          </button>
 
           <div className="bg-amber-900/20 rounded-lg p-3 border border-amber-900/30">
-            <p className="text-xs text-amber-300 mb-2">⭐ 油猴脚本（备用方案）</p>
-            <p className="text-xs text-gray-400">安装 Tampermonkey 后自动启用</p>
+            <p className="text-xs text-amber-300 mb-2">⭐ 油猴脚本（推荐方案）</p>
+            <p className="text-xs text-gray-400">安装 Tampermonkey 后自动启用，无需手动操作</p>
             <button onClick={() => {
               const base = (typeof import.meta !== 'undefined' && (import.meta as any).env?.BASE_URL) || '/';
               window.open(`${window.location.origin}${base}tt-lobby-manager.user.js`, '_blank');
@@ -143,24 +144,24 @@ function App() {
           <h2 className="text-lg font-bold mb-3 text-center">📖 使用教程</h2>
           <div className="space-y-3 text-sm text-gray-400">
             <div className="flex items-start gap-3">
-              <span className="text-emerald-400 font-bold">1</span>
-              <span>拖拽 🏰 Lobby 0 到浏览器收藏夹栏</span>
+              <span className="text-emerald-400 font-bold">📱</span>
+              <span><b>移动端添加书签：</b><br/>1. 点击按钮复制代码<br/>2. 浏览器 → 菜单 → 添加书签<br/>3. 名称填"🏰 Lobby 0"<br/>4. 网址粘贴刚才复制的代码</span>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-emerald-400 font-bold">2</span>
+              <span className="text-emerald-400 font-bold">🖥️</span>
+              <span><b>桌面端添加书签：</b><br/>直接拖拽按钮到浏览器收藏夹栏</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-emerald-400 font-bold">1</span>
               <span>打开 territorial.io 等待游戏加载</span>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-emerald-400 font-bold">3</span>
+              <span className="text-emerald-400 font-bold">2</span>
               <span>点击书签，右上角弹出控制面板</span>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-emerald-400 font-bold">4</span>
-              <span>退出当前大厅后重新进入多人游戏</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="text-amber-400 font-bold">5</span>
-              <span>关闭工具后恢复原始连接</span>
+              <span className="text-emerald-400 font-bold">3</span>
+              <span>启用后退出大厅重新进入多人游戏</span>
             </div>
           </div>
         </div>

@@ -18,11 +18,9 @@
       const parsedUrl = new URL(url);
       if (parsedUrl.hostname.includes('territorial.io')) {
         isTT = true;
-        if (activeConns.length === 0) {
-          parsedUrl.hostname = servers[currentLobby];
-          targetUrl = parsedUrl.toString();
-          console.log('[TT Lobby] WebSocket redirected to:', targetUrl);
-        }
+        parsedUrl.hostname = servers[currentLobby];
+        targetUrl = parsedUrl.toString();
+        console.log('[TT Lobby] WebSocket redirected to:', targetUrl);
       }
     } catch(e) {}
     const ws = new originalWebSocket(targetUrl, protocols);
@@ -36,7 +34,12 @@
     return ws;
   };
   window.WebSocket.prototype = originalWebSocket.prototype;
+  window.WebSocket.prototype.constructor = window.WebSocket;
   window.WebSocket.toString = function() { return originalWebSocket.toString(); };
+  window.WebSocket.OPEN = originalWebSocket.OPEN;
+  window.WebSocket.CLOSED = originalWebSocket.CLOSED;
+  window.WebSocket.CLOSING = originalWebSocket.CLOSING;
+  window.WebSocket.CONNECTING = originalWebSocket.CONNECTING;
 
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'TT_LOBBY_SWITCH') {

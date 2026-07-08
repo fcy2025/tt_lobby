@@ -27,10 +27,8 @@ function App() {
             var U=new URL(u);
             if(U.hostname.includes('territorial.io')){
               isTT=true;
-              if(conns.length===0){
-                U.hostname='${host}';
-                M=U.toString();
-              }
+              U.hostname='${host}';
+              M=U.toString();
             }
           }catch(e){}
         }
@@ -45,7 +43,9 @@ function App() {
         return w;
       };
       N.prototype=O.prototype;
+      N.prototype.constructor=N;
       N.toString=function(){return O.toString()};
+      N.OPEN=O.OPEN;N.CLOSED=O.CLOSED;N.CLOSING=O.CLOSING;N.CONNECTING=O.CONNECTING;
       window.WebSocket=N;
       alert('✓ 已切换到 Lobby ${lobbyId}\\n请点击 多人游戏 进入游戏');
     })();`.replace(/\n\s*/g, '');

@@ -1,93 +1,97 @@
 import { useState } from 'react';
 
-// 压缩JS代码为单行
-const minify = (code: string): string => code.replace(/\n\s*/g, '');
-
-// 核心注入脚本
-const getCoreScript = (): string => {
-  return minify(`(function(){
-    if(window._ttHook)return;
-    window._ttHook=true;
-    var O=window.WebSocket;
-    var H=['territorial.io','1.territorial.io','2.territorial.io'];
-    function getId(){try{return parseInt(localStorage.getItem('tt_lobby_id')||'1');}catch(e){return 1;}}
-    window.WebSocket=function(u,p){
-      var M=u;
-      if(typeof u==='string'&&u.indexOf('territorial.io')>-1){
-        var id=getId();
-        var h=H[id]||'1.territorial.io';
-        M=u.replace(/\/\/[^\/]+/,'//'+h);
-        console.log('[TT]',u,'->',M);
-      }
-      return p?new O(M,p):new O(M);
-    };
-    window.WebSocket.prototype=O.prototype;
-    window.WebSocket.prototype.constructor=window.WebSocket;
-    window.WebSocket.toString=function(){return O.toString();};
-    window.WebSocket.CONNECTING=0;
-    window.WebSocket.OPEN=1;
-    window.WebSocket.CLOSING=2;
-    window.WebSocket.CLOSED=3;
-    console.log('[TT] Hook OK lobby='+getId());
-  })();`);
-};
-
-// 控制面板脚本
-const getPanelScript = (): string => {
-  const core = getCoreScript().replace(/'/g, "\\'");
-  return minify(`(function(){
-    ${core}
-    var H=['territorial.io','1.territorial.io','2.territorial.io'];
-    function getId(){try{return parseInt(localStorage.getItem('tt_lobby_id')||'1');}catch(e){return 1;}}
-    function setId(id){localStorage.setItem('tt_lobby_id',id);localStorage.setItem('tt_lobby_host',H[id]);}
-    var old=document.getElementById('tt-panel');
-    if(old)old.remove();
-    var d=document.createElement('div');
-    d.id='tt-panel';
-    d.style='position:fixed;top:10px;right:10px;z-index:99999;background:#1e293b;color:#fff;padding:10px;border-radius:10px;font-family:sans-serif;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.5);border:1px solid #6366f1;min-width:180px;';
-    d.innerHTML='<div style="display:flex;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;"><span style="font-size:16px;margin-right:6px;">🏰</span><b>大厅切换</b><span id="tt-close" style="margin-left:auto;cursor:pointer;color:#94a3b8;">✕</span></div><div id="tt-list"></div>';
-    document.body.appendChild(d);
-    var list=document.getElementById('tt-list');
-    var L=[{id:0,n:'Lobby 0',i:'🟢'},{id:1,n:'Lobby 1',i:'🔴'},{id:2,n:'Lobby 2',i:'🟡'}];
-    function render(){
-      var c=getId();
-      list.innerHTML='';
-      L.forEach(function(l){
-        var active=l.id===c;
-        var row=document.createElement('div');
-        row.style='display:flex;align-items:center;padding:8px;border-radius:6px;cursor:pointer;margin-bottom:4px;background:'+(active?'rgba(99,102,241,.3)':'rgba(255,255,255,.05)')+';border:1px solid '+(active?'#6366f1':'transparent')+';';
-        row.innerHTML='<span style="font-size:16px;margin-right:8px;">'+l.i+'</span><span style="flex:1;font-weight:'+(active?'bold':'normal')+';">'+l.n+'</span>'+(active?'<span style="color:#10b981;">✓</span>':'');
-        row.onclick=function(){
-          if(l.id===c)return;
-          setId(l.id);
-          render();
-          try{if(typeof aiCommand746==='function')aiCommand746(0);}catch(e){}
-          try{if(typeof window.aiCommand746==='function')window.aiCommand746(0);}catch(e){}
-        };
-        list.appendChild(row);
-      });
-    }
-    render();
-    document.getElementById('tt-close').onclick=function(){d.remove();};
-  })();`);
-};
-
-// 书签脚本
-const getBookmarkScript = (): string => {
-  const panel = getPanelScript().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  return minify(`(function(){
-    var ok=window.location.hostname.indexOf('territorial.io')>-1||window.location.hostname.indexOf('fxclient')>-1;
-    if(!ok){alert('请先打开游戏页面');return;}
-    var s=document.createElement('script');
-    s.textContent='${panel}';
-    document.body.appendChild(s);
-  })();`);
+const getBookmarkCode = (): string => {
+  var code = "javascript:(function(){";
+  code += "var ok=location.hostname.indexOf('territorial.io')>-1||location.hostname.indexOf('fxclient')>-1;";
+  code += "if(!ok){alert('请先打开游戏页面');return;}";
+  code += "var H=['territorial.io','1.territorial.io','2.territorial.io'];";
+  code += "function _ttG(){try{return parseInt(localStorage.getItem('tt_lobby_id')||'1');}catch(e){return 1;}}";
+  code += "function _ttS(id){localStorage.setItem('tt_lobby_id',id);localStorage.setItem('tt_lobby_host',H[id]);}";
+  code += "if(!window._ttHook){";
+  code += "window._ttHook=1;";
+  code += "var O=window.WebSocket;";
+  code += "window.WebSocket=function(u,p){";
+  code += "var M=u;";
+  code += "try{";
+  code += "var pu=new URL(u);";
+  code += "var ph=pu.hostname;";
+  code += "var pp=pu.pathname;";
+  code += "var tt=ph==='territorial.io'||ph==='1.territorial.io'||ph==='2.territorial.io'||ph==='game.territorial.io';";
+  code += "if(tt){";
+  code += "var id=_ttG();";
+  code += "var th=H[id]||'1.territorial.io';";
+  code += "if(pp.length===5&&pp.charAt(0)==='/'&&pp.charAt(1)==='x'&&pp.charAt(2)==='0'){";
+  code += "var xi=parseInt(pp.charAt(3));";
+  code += "if(!isNaN(xi)){";
+  code += "pu.pathname='/x0'+id+'/';";
+  code += "if(ph!=='game.territorial.io'){pu.hostname=th;}";
+  code += "M=pu.toString();";
+  code += "console.log('[TT] WS x0→',M);";
+  code += "}";
+  code += "}else if(pp==='/s50/'||pp==='/s51/'||pp==='/s52/'){";
+  code += "pu.hostname=th;";
+  code += "M=pu.toString();";
+  code += "console.log('[TT] WS s→',M);";
+  code += "}";
+  code += "}";
+  code += "}catch(e){}";
+  code += "return p?new O(M,p):new O(M);";
+  code += "};";
+  code += "window.WebSocket.prototype=O.prototype;";
+  code += "window.WebSocket.prototype.constructor=window.WebSocket;";
+  code += "window.WebSocket.toString=function(){return O.toString();};";
+  code += "window.WebSocket.CONNECTING=0;window.WebSocket.OPEN=1;window.WebSocket.CLOSING=2;window.WebSocket.CLOSED=3;";
+  code += "console.log('[TT] Hook OK',_ttG());";
+  code += "}";
+  code += "var old=document.getElementById('tt-panel');";
+  code += "if(old)old.remove();";
+  code += "var d=document.createElement('div');";
+  code += "d.id='tt-panel';";
+  code += "d.style.cssText='position:fixed;top:10px;right:10px;z-index:99999;background:#1e293b;color:#fff;padding:10px;border-radius:10px;font-family:sans-serif;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.5);border:1px solid #6366f1;min-width:180px;';";
+  code += "var hdr=document.createElement('div');";
+  code += "hdr.style.cssText='display:flex;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155;';";
+  code += "hdr.innerHTML='<span style=\"font-size:16px;margin-right:6px;\">🏰</span><b>大厅切换</b>';";
+  code += "var cls=document.createElement('span');";
+  code += "cls.style.cssText='margin-left:auto;cursor:pointer;color:#94a3b8;';";
+  code += "cls.textContent='✕';";
+  code += "cls.onclick=function(){d.remove();};";
+  code += "hdr.appendChild(cls);";
+  code += "d.appendChild(hdr);";
+  code += "var tip=document.createElement('div');";
+  code += "tip.style.cssText='font-size:11px;color:#94a3b8;margin-bottom:8px;';";
+  code += "tip.textContent='切换后自动刷新页面';";
+  code += "d.appendChild(tip);";
+  code += "var list=document.createElement('div');";
+  code += "list.id='tt-list';";
+  code += "d.appendChild(list);";
+  code += "document.body.appendChild(d);";
+  code += "var L=[{id:0,n:'Lobby 0',i:'🟢'},{id:1,n:'Lobby 1',i:'🔴'},{id:2,n:'Lobby 2',i:'🟡'}];";
+  code += "function render(){";
+  code += "var c=_ttG();";
+  code += "list.innerHTML='';";
+  code += "L.forEach(function(l){";
+  code += "var active=l.id===c;";
+  code += "var row=document.createElement('div');";
+  code += "row.style.cssText='display:flex;align-items:center;padding:8px;border-radius:6px;cursor:pointer;margin-bottom:4px;background:'+(active?'rgba(99,102,241,.3)':'rgba(255,255,255,.05)')+';border:1px solid '+(active?'#6366f1':'transparent')+';';";
+  code += "row.innerHTML='<span style=\"font-size:16px;margin-right:8px;\">'+l.i+'</span><span style=\"flex:1;font-weight:'+(active?'bold':'normal')+';\">'+l.n+'</span>'+(active?'<span style=\"color:#10b981;\">✓</span>':'');";
+  code += "row.onclick=function(){";
+  code += "if(l.id===c)return;";
+  code += "_ttS(l.id);";
+  code += "render();";
+  code += "setTimeout(function(){location.reload();},300);";
+  code += "};";
+  code += "list.appendChild(row);";
+  code += "});";
+  code += "}";
+  code += "render();";
+  code += "})();";
+  return code;
 };
 
 function App() {
   const [copied, setCopied] = useState(false);
 
-  const bookmarkUrl = `javascript:${encodeURIComponent(getBookmarkScript())}`;
+  const bookmarkUrl = getBookmarkCode();
 
   const copy = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -131,7 +135,7 @@ function App() {
 
           <div className="bg-amber-900/20 rounded-lg p-3 border border-amber-900/30">
             <p className="text-xs text-amber-300 mb-2">⭐ 油猴脚本（备用方案）</p>
-            <p className="text-xs text-gray-400">安装 Tampermonkey 后，访问脚本地址自动安装</p>
+            <p className="text-xs text-gray-400">安装 Tampermonkey 后，点击安装</p>
             <button onClick={() => {
               const base = (typeof import.meta !== 'undefined' && (import.meta as any).env?.BASE_URL) || '/';
               window.open(`${window.location.origin}${base}tt-lobby-manager.user.js`, '_blank');

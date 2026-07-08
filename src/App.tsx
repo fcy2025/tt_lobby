@@ -20,13 +20,38 @@ const getPanelScript = (): string => {
         if(u&&typeof u==='string'){
           try{
             var U=new URL(u);
-            if(U.hostname.includes('territorial.io')&&U.pathname==='/s52/'){
+            var host=U.hostname;
+            var path=U.pathname;
+            var isTT=host==='territorial.io'||host==='1.territorial.io'||host==='2.territorial.io'||host==='game.territorial.io';
+            if(isTT){
               var id=getSaved();
-              U.hostname=hosts[id]||'1.territorial.io';
-              M=U.toString();
-              console.log('[TT] WS→',M);
+              var targetHost=hosts[id]||'1.territorial.io';
+              // Handle /x0N/ paths (e.g., /x01/ -> /x0{id}/)
+              var xMatch=path.match(/^\/x0(\d)\/$/);
+              if(xMatch){
+                U.pathname='/x0'+id+'/';
+                if(host==='game.territorial.io'){
+                  // keep game.territorial.io for x0 paths
+                }else{
+                  U.hostname=targetHost;
+                }
+                M=U.toString();
+                console.log('[TT] WS x0→',M);
+              }
+              // Handle /s50/, /s51/, /s52/ paths
+              else if(path==='/s50/'||path==='/s51/'||path==='/s52/'){
+                U.hostname=targetHost;
+                M=U.toString();
+                console.log('[TT] WS s→',M);
+              }
+              // Handle /s52/ from error reporting or other paths
+              else if(path==='/s52/'){
+                U.hostname=targetHost;
+                M=U.toString();
+                console.log('[TT] WS err→',M);
+              }
             }
-          }catch(e){}
+          }catch(e){console.log('[TT] URL parse error:',e);}
         }
         if(p&&Array.isArray(p))return new O(M,p);
         if(p)return new O(M,p);
@@ -40,7 +65,7 @@ const getPanelScript = (): string => {
       window.WebSocket.CLOSED=O.CLOSED;
       window.WebSocket.CLOSING=O.CLOSING;
       window.WebSocket.CONNECTING=O.CONNECTING;
-      console.log('[TT] WS hook installed');
+      console.log('[TT] WS hook installed for Lobby',getSaved());
     }
 
     // 覆盖window.onload，确保在游戏初始化前注入钩子

@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TT Lobby Manager
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      3.2
-// @description  Territorial.io 大厅切换 - 在游戏初始化前注入钩子
+// @version      3.3
+// @description  Territorial.io 大厅切换 - 支持所有WebSocket路径模式
 // @author       fcy20
 // @match        https://territorial.io/*
 // @match        https://fxclient.github.io/FXclient/*
@@ -25,7 +25,6 @@
     catch(e) { return 1; }
   }
 
-  // 注入WebSocket钩子
   function injectWS() {
     if (window._ttOrigWS) return;
     const O = window.WebSocket;
@@ -35,13 +34,27 @@
       if (u && typeof u === 'string') {
         try {
           const U = new URL(u);
-          if (U.hostname.includes('territorial.io') && U.pathname === '/s52/') {
+          const host = U.hostname;
+          const path = U.pathname;
+          const isTT = host === 'territorial.io' || host === '1.territorial.io' || host === '2.territorial.io' || host === 'game.territorial.io';
+          if (isTT) {
             const id = getSaved();
-            U.hostname = hosts[id] || '1.territorial.io';
-            M = U.toString();
-            console.log('[TT] WS→', M);
+            const targetHost = hosts[id] || '1.territorial.io';
+            const xMatch = path.match(/^\/x0(\d)\/$/);
+            if (xMatch) {
+              U.pathname = '/x0' + id + '/';
+              if (host !== 'game.territorial.io') {
+                U.hostname = targetHost;
+              }
+              M = U.toString();
+              console.log('[TT] WS x0→', M);
+            } else if (path === '/s50/' || path === '/s51/' || path === '/s52/') {
+              U.hostname = targetHost;
+              M = U.toString();
+              console.log('[TT] WS s→', M);
+            }
           }
-        } catch(e) {}
+        } catch(e) { console.log('[TT] URL parse error:', e); }
       }
       if (p && Array.isArray(p)) return new O(M, p);
       if (p) return new O(M, p);
@@ -59,23 +72,18 @@
     console.log('[TT] WS hook installed for Lobby', getSaved());
   }
 
-  // 覆盖window.onload
-  function hookOnload() {
-    const origOnload = window.onload;
-    window.onload = function() {
-      injectWS();
-      if (typeof origOnload === 'function') {
-        try { origOnload(); } catch(e) {}
-      }
-    };
-  }
-
-  // document-start 时立即执行
+  // document-start: inject immediately
   injectWS();
-  hookOnload();
-  console.log('[TT] Hooked onload');
 
-  // 创建控制面板
+  // Also hook window.onload to catch late initializations
+  const origOnload = window.onload;
+  window.onload = function() {
+    injectWS();
+    if (typeof origOnload === 'function') {
+      try { origOnload(); } catch(e) {}
+    }
+  };
+
   function createPanel() {
     const old = document.getElementById('tt-lobby-panel');
     if (old) old.remove();
@@ -132,7 +140,6 @@
     document.getElementById('tt-lobby-close').onclick = () => panel.remove();
   }
 
-  // DOM就绪后创建控制面板
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', createPanel);
   } else {

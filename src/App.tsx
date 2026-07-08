@@ -10,7 +10,7 @@ const getBookmarkCode = (): string => {
   code += "var H1=Math.round(W*PHI);";
   code += "var H2=Math.round(H1*0.618);";
   code += "var GAP=8;";
-  code += "var TAB_W=24;";
+  code += "var TAB_W=36;";
   code += "function _ttG(){try{return localStorage.getItem('tt_lobby_enabled')==='1';}catch(e){return false;}}";
   code += "function _ttE(){localStorage.setItem('tt_lobby_enabled','1');localStorage.setItem('tt_lobby_id','0');localStorage.setItem('tt_lobby_host',L0);}";
   code += "function _ttD(){localStorage.removeItem('tt_lobby_enabled');localStorage.removeItem('tt_lobby_id');localStorage.removeItem('tt_lobby_host');if(window._ttOrigWS){window.WebSocket=window._ttOrigWS;}window._ttHook=0;}";
@@ -115,7 +115,7 @@ const getBookmarkCode = (): string => {
   code += "if(uiVisible){";
   code += "wrap.style.transform='translateX(0)';arrow.textContent='▶';lbl.textContent='收起';";
   code += "}else{";
-  code += "wrap.style.transform='translateX('+W+'px)';arrow.textContent='◀';lbl.textContent='展开';";
+  code += "wrap.style.transform='translateX(calc(100% - '+TAB_W+'px))';arrow.textContent='◀';lbl.textContent='展开';";
   code += "}";
   code += "};";
   code += "})();";

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TT Lobby 0
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      7.4
+// @version      7.5
 // @description  快捷连接到 Territorial.io Lobby 0
 // @author       fcy20
 // @match        https://territorial.io/*
@@ -18,7 +18,7 @@
   var H1 = Math.round(W * PHI);
   var H2 = Math.round(H1 * 0.618);
   var GAP = 8;
-  var TAB_W = 24;
+  var TAB_W = 36;
 
   function isOn() {
     try { return localStorage.getItem('tt_lobby_enabled') === '1'; }
@@ -185,7 +185,7 @@
         arrow.textContent = '▶';
         lbl.textContent = '收起';
       } else {
-        wrap.style.transform = 'translateX(' + W + 'px)';
+        wrap.style.transform = 'translateX(calc(100% - ' + TAB_W + 'px))';
         arrow.textContent = '◀';
         lbl.textContent = '展开';
       }

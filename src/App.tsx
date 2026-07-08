@@ -1,16 +1,78 @@
 import { useState } from 'react';
 
-// 注入到游戏页面的浮动控制面板脚本
+// 注入到游戏页面的脚本
 const getPanelScript = (): string => {
   return `(function(){
-    var LOBBIES=[{id:0,name:'Lobby 0',icon:'🟢',host:'territorial.io',desc:'备用大厅'},{id:1,name:'Lobby 1',icon:'🔴',host:'1.territorial.io',desc:'默认主大厅'},{id:2,name:'Lobby 2',icon:'🟡',host:'2.territorial.io',desc:'备选大厅'}];
     var hosts=['territorial.io','1.territorial.io','2.territorial.io'];
 
-    function getSaved(){return parseInt(localStorage.getItem('tt_lobby_id')||'1');}
-    var saved=getSaved();
+    function getSaved(){
+      try{return parseInt(localStorage.getItem('tt_lobby_id')||'1');}
+      catch(e){return 1;}
+    }
 
-    // 重建面板UI
-    function rebuildPanel(){
+    // 注入WebSocket钩子
+    function injectWS(){
+      if(window._ttOrigWS)return;
+      var O=window.WebSocket;
+      window._ttOrigWS=O;
+      window.WebSocket=function(u,p){
+        var M=u;
+        if(u&&typeof u==='string'){
+          try{
+            var U=new URL(u);
+            if(U.hostname.includes('territorial.io')&&U.pathname==='/s52/'){
+              var id=getSaved();
+              U.hostname=hosts[id]||'1.territorial.io';
+              M=U.toString();
+              console.log('[TT] WS→',M);
+            }
+          }catch(e){}
+        }
+        if(p&&Array.isArray(p))return new O(M,p);
+        if(p)return new O(M,p);
+        return new O(M);
+      };
+      window.WebSocket.prototype=O.prototype;
+      window.WebSocket.prototype.constructor=window.WebSocket;
+      try{Object.defineProperty(window.WebSocket,'name',{value:'WebSocket',configurable:true});}catch(e){}
+      window.WebSocket.toString=function(){return O.toString();};
+      window.WebSocket.OPEN=O.OPEN;
+      window.WebSocket.CLOSED=O.CLOSED;
+      window.WebSocket.CLOSING=O.CLOSING;
+      window.WebSocket.CONNECTING=O.CONNECTING;
+      console.log('[TT] WS hook installed');
+    }
+
+    // 覆盖window.onload，确保在游戏初始化前注入钩子
+    function hookOnload(){
+      var origOnload=window.onload;
+      window.onload=function(){
+        injectWS();
+        if(typeof origOnload==='function'){
+          try{origOnload();}catch(e){}
+        }
+      };
+    }
+
+    // 立即注入钩子
+    injectWS();
+
+    // 如果页面还没加载完成，覆盖onload
+    if(document.readyState!=='complete'){
+      hookOnload();
+      console.log('[TT] Waiting for page load...');
+    }else{
+      // 页面已加载，尝试重新初始化游戏
+      console.log('[TT] Page already loaded');
+      try{
+        if(typeof aiCommand746==='function'){aiCommand746(0);console.log('[TT] Re-initiated game');}
+        else if(typeof window.aiCommand746==='function'){window.aiCommand746(0);console.log('[TT] Re-initiated game');}
+        else if(typeof bw==='function'){bw(0);console.log('[TT] Called bw(0)');}
+      }catch(e){console.log('[TT] Re-init error:',e);}
+    }
+
+    // 创建控制面板
+    function createPanel(){
       var old=document.getElementById('tt-lobby-panel');
       if(old)old.remove();
       var cur=getSaved();
@@ -20,63 +82,42 @@ const getPanelScript = (): string => {
       panel.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1);"><span style="font-size:20px">🏰</span><span style="font-weight:700;font-size:15px;flex:1">大厅切换</span><span id="tt-lobby-close" style="cursor:pointer;opacity:.6;font-size:18px;line-height:1">×</span></div><div style="font-size:11px;color:#94a3b8;margin-bottom:8px">当前: <b id="tt-lobby-current" style="color:#a5b4fc">Lobby '+cur+'</b></div><div id="tt-lobby-list" style="display:flex;flex-direction:column;gap:6px"></div>';
       document.body.appendChild(panel);
       var list=document.getElementById('tt-lobby-list');
-      LOBBIES.forEach(function(l){
-        var isCur=l.id===cur;
-        var btn=document.createElement('div');
-        btn.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;background:'+(isCur?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)')+';border:1px solid '+(isCur?'#6366f1':'rgba(255,255,255,.08)')+';transition:all .15s;';
-        btn.innerHTML='<span style="font-size:20px">'+l.icon+'</span><div style="flex:1"><div style="font-size:14px;font-weight:600">'+l.name+'</div><div style="font-size:10px;color:#94a3b8">'+l.desc+'</div></div>'+(isCur?'<span style="color:#10b981;font-size:16px">✓</span>':'');
-        btn.onmouseenter=function(){if(!isCur)btn.style.background='rgba(255,255,255,.08)';};
-        btn.onmouseleave=function(){btn.style.background=isCur?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)';};
-        btn.onclick=function(){
-          if(l.id===cur)return;
-          localStorage.setItem('tt_lobby_id',l.id.toString());
-          localStorage.setItem('tt_lobby_host',hosts[l.id]);
-          rebuildPanel();
-          try{
-            if(typeof aiCommand746==='function'){aiCommand746(0);}
-            else if(typeof window.aiCommand746==='function'){window.aiCommand746(0);}
-          }catch(e){console.log('[TT] aiCommand746 error:',e);}
-        };
-        list.appendChild(btn);
-      });
+      var LOBBIES=[{id:0,name:'Lobby 0',icon:'🟢',desc:'备用大厅'},{id:1,name:'Lobby 1',icon:'🔴',desc:'默认主大厅'},{id:2,name:'Lobby 2',icon:'🟡',desc:'备选大厅'}];
+      function rebuild(){
+        var current=getSaved();
+        list.innerHTML='';
+        LOBBIES.forEach(function(l){
+          var isCur=l.id===current;
+          var btn=document.createElement('div');
+          btn.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;background:'+(isCur?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)')+';border:1px solid '+(isCur?'#6366f1':'rgba(255,255,255,.08)')+';transition:all .15s;';
+          btn.innerHTML='<span style="font-size:20px">'+l.icon+'</span><div style="flex:1"><div style="font-size:14px;font-weight:600">'+l.name+'</div><div style="font-size:10px;color:#94a3b8">'+l.desc+'</div></div>'+(isCur?'<span style="color:#10b981;font-size:16px">✓</span>':'');
+          btn.onmouseenter=function(){if(!isCur)btn.style.background='rgba(255,255,255,.08)';};
+          btn.onmouseleave=function(){btn.style.background=isCur?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)';};
+          btn.onclick=function(){
+            if(l.id===current)return;
+            localStorage.setItem('tt_lobby_id',l.id.toString());
+            localStorage.setItem('tt_lobby_host',hosts[l.id]);
+            rebuild();
+            var c=document.getElementById('tt-lobby-current');
+            if(c)c.textContent='Lobby '+l.id;
+            try{
+              if(typeof aiCommand746==='function'){aiCommand746(0);}
+              else if(typeof window.aiCommand746==='function'){window.aiCommand746(0);}
+              else if(typeof bw==='function'){bw(0);}
+            }catch(e){console.log('[TT] Switch error:',e);}
+          };
+          list.appendChild(btn);
+        });
+      }
+      rebuild();
       document.getElementById('tt-lobby-close').onclick=function(){panel.remove();};
     }
 
-    rebuildPanel();
-
-    // 注入WebSocket钩子（只注入一次）
-    if(!window._ttOrigWS){
-      window._ttOrigWS=window.WebSocket;
-      window.WebSocket=function(u,p){
-        var M=u;
-        if(u&&typeof u==='string'){
-          try{
-            var U=new URL(u);
-            if(U.hostname.includes('territorial.io')&&U.pathname==='/s52/'){
-              var id=parseInt(localStorage.getItem('tt_lobby_id')||'1');
-              U.hostname=hosts[id]||'1.territorial.io';
-              M=U.toString();
-              console.log('[TT Lobby] WS→',M);
-            }
-          }catch(e){}
-        }
-        var w;
-        if(p&&Array.isArray(p)){w=new window._ttOrigWS(M,p);}
-        else if(p){w=new window._ttOrigWS(M,p);}
-        else{w=new window._ttOrigWS(M);}
-        return w;
-      };
-      window.WebSocket.prototype=window._ttOrigWS.prototype;
-      window.WebSocket.prototype.constructor=window.WebSocket;
-      try{
-        Object.defineProperty(window.WebSocket,'name',{value:'WebSocket',configurable:true});
-      }catch(e){}
-      window.WebSocket.toString=function(){return window._ttOrigWS.toString()};
-      window.WebSocket.OPEN=window._ttOrigWS.OPEN;
-      window.WebSocket.CLOSED=window._ttOrigWS.CLOSED;
-      window.WebSocket.CLOSING=window._ttOrigWS.CLOSING;
-      window.WebSocket.CONNECTING=window._ttOrigWS.CONNECTING;
-      console.log('[TT Lobby] WebSocket hook installed');
+    // DOM就绪后创建控制面板
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',createPanel);
+    }else{
+      createPanel();
     }
   })();`;
 };

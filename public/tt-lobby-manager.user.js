@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TT Lobby 0
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      7.5
+// @version      7.6
 // @description  快捷连接到 Territorial.io Lobby 0
 // @author       fcy20
 // @match        https://territorial.io/*
@@ -102,6 +102,23 @@
   var auaTimer = setInterval(function() { if (modAua()) hookDi(); }, 500);
   setTimeout(function() { clearInterval(auaTimer); }, 30000);
 
+  // === Force disconnect and reset ===
+  function forceReset() {
+    if (window.b1 && window.b1.z) {
+      try { if (typeof window.b1.z.sJ === 'function') window.b1.z.sJ(); } catch(e) {}
+      try { if (typeof window.b1.z.di === 'function') window.b1.z.di(); } catch(e) {}
+    }
+    try {
+      if (typeof window.b1 === 'object') {
+        for (var k in window.b1) {
+          var v = window.b1[k];
+          if (v && v.readyState !== undefined && v.readyState === 1) { try { v.close(); } catch(e) {} }
+        }
+      }
+    } catch(e) {}
+  }
+  setInterval(function() { if (isOn()) modAua(); }, 1000);
+
   // === UI Panel (waits for body) ===
   function createPanel() {
     var ow = document.getElementById('tt-wrap');
@@ -127,7 +144,7 @@
       sw.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:' + (on ? 'rgba(16,185,129,0.2)' : 'rgba(75,85,99,0.3)') + ';border:1px solid ' + (on ? 'rgba(16,185,129,0.5)' : 'rgba(75,85,99,0.5)') + ';cursor:pointer;transition:all 0.2s;';
       sw.innerHTML = '<span style="font-weight:500;font-size:13px;">' + (on ? '已启用' : '未启用') + '</span><div style="width:44px;height:24px;border-radius:12px;background:' + (on ? '#10b981' : '#4b5563') + ';position:relative;transition:background 0.3s ease;"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (on ? '22px' : '2px') + ';transition:left 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div></div>';
       sw.onclick = function() {
-        if (on) turnOff(); else { turnOn(); modAua(); }
+        if (on) turnOff(); else { turnOn(); modAua(); forceReset(); }
         render();
       };
 

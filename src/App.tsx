@@ -57,6 +57,20 @@ const getBookmarkCode = (): string => {
   code += "_ttM();";
   code += "var b1T=setInterval(function(){if(_ttM())clearInterval(b1T);},300);";
   code += "setTimeout(function(){clearInterval(b1T);},10000);";
+  // Force disconnect and reset
+  code += "function _ttR(){";
+  code += "if(window.b1&&window.b1.z){";
+  code += "try{if(typeof window.b1.z.sJ==='function')window.b1.z.sJ();}catch(e){}";
+  code += "try{if(typeof window.b1.z.di==='function')window.b1.z.di();}catch(e){}";
+  code += "}";
+  code += "try{if(typeof window.b1==='object'){";
+  code += "for(var k in window.b1){";
+  code += "var v=window.b1[k];";
+  code += "if(v&&v.readyState!==undefined&&v.readyState===1){try{v.close();}catch(e){}}";
+  code += "}";
+  code += "}}catch(e){}";
+  code += "}";
+  code += "setInterval(function(){if(_ttG())_ttM();},1000);";
   // UI - cleanup
   code += "var ow=document.getElementById('tt-wrap');if(ow)ow.remove();";
   // Wrapper - contains both panels, slides in/out
@@ -77,7 +91,7 @@ const getBookmarkCode = (): string => {
   code += "var sw=document.createElement('div');";
   code += "sw.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:'+(on?'rgba(16,185,129,0.2)':'rgba(75,85,99,0.3)')+';border:1px solid '+(on?'rgba(16,185,129,0.5)':'rgba(75,85,99,0.5)')+';cursor:pointer;transition:all 0.2s;';";
   code += "sw.innerHTML='<span style=\"font-weight:500;font-size:13px;\">'+(on?'已启用':'未启用')+'</span><div style=\"width:44px;height:24px;border-radius:12px;background:'+(on?'#10b981':'#4b5563')+';position:relative;transition:background 0.3s ease;\"><div style=\"width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:'+(on?'22px':'2px')+';transition:left 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);\"></div></div>';";
-  code += "sw.onclick=function(){if(on){_ttD();}else{_ttE();_ttM();}render();};";
+  code += "sw.onclick=function(){if(on){_ttD();}else{_ttE();_ttM();_ttR();}render();};";
   code += "d.innerHTML='';d.appendChild(hdr);d.appendChild(sw);";
   code += "var tip=document.createElement('div');";
   code += "tip.style.cssText='margin-top:10px;padding:8px;border-radius:8px;font-size:11px;line-height:1.4;background:'+(on?'rgba(16,185,129,0.1)':'rgba(251,191,36,0.1)')+';color:'+(on?'#6ee7b7':'#fbbf24')+';';";

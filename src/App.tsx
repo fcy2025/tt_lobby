@@ -3,65 +3,80 @@ import { useState } from 'react';
 // 注入到游戏页面的浮动控制面板脚本
 const getPanelScript = (): string => {
   return `(function(){
-    if(document.getElementById('tt-lobby-panel'))return;
-    var saved=parseInt(localStorage.getItem('tt_lobby_id')||'1');
-    var panel=document.createElement('div');
-    panel.id='tt-lobby-panel';
-    panel.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;user-select:none;background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;padding:12px;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);border:1px solid rgba(99,102,241,.3);min-width:220px;';
-    panel.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1);"><span style="font-size:20px">🏰</span><span style="font-weight:700;font-size:15px;flex:1">大厅切换</span><span id="tt-lobby-close" style="cursor:pointer;opacity:.6;font-size:18px;line-height:1">×</span></div><div style="font-size:11px;color:#94a3b8;margin-bottom:8px">当前: <b id="tt-lobby-current" style="color:#a5b4fc">Lobby '+saved+'</b></div><div id="tt-lobby-list" style="display:flex;flex-direction:column;gap:6px"></div>';
-    document.body.appendChild(panel);
-    var list=document.getElementById('tt-lobby-list');
-    var LOBBIES=[{id:0,name:'Lobby 0',icon:'🟢',color:'#10b981',desc:'备用大厅'},{id:1,name:'Lobby 1',icon:'🔴',color:'#ef4444',desc:'默认主大厅'},{id:2,name:'Lobby 2',icon:'🟡',color:'#f59e0b',desc:'备选大厅'}];
-    LOBBIES.forEach(function(l){
-      var btn=document.createElement('div');
-      btn.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;background:'+(l.id===saved?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)')+';border:1px solid '+(l.id===saved?'#6366f1':'rgba(255,255,255,.08)')+';transition:all .15s;';
-      btn.innerHTML='<span style="font-size:20px">'+l.icon+'</span><div style="flex:1"><div style="font-size:14px;font-weight:600">'+l.name+'</div><div style="font-size:10px;color:#94a3b8">'+l.desc+'</div></div>'+(l.id===saved?'<span style="color:#10b981;font-size:16px">✓</span>':'');
-      btn.onmouseenter=function(){if(l.id!==saved)btn.style.background='rgba(255,255,255,.08)';};
-      btn.onmouseleave=function(){btn.style.background=l.id===saved?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)';};
-      btn.onclick=function(){
-        if(l.id===saved)return;
-        localStorage.setItem('tt_lobby_id',l.id.toString());
-        localStorage.setItem('tt_lobby_host',['territorial.io','1.territorial.io','2.territorial.io'][l.id]);
-        if(window._ttLobbyOnSelect)window._ttLobbyOnSelect(l.id);
-      };
-      list.appendChild(btn);
-    });
-    document.getElementById('tt-lobby-close').onclick=function(){panel.remove();};
+    var LOBBIES=[{id:0,name:'Lobby 0',icon:'🟢',host:'territorial.io',desc:'备用大厅'},{id:1,name:'Lobby 1',icon:'🔴',host:'1.territorial.io',desc:'默认主大厅'},{id:2,name:'Lobby 2',icon:'🟡',host:'2.territorial.io',desc:'备选大厅'}];
+    var hosts=['territorial.io','1.territorial.io','2.territorial.io'];
+
+    function getSaved(){return parseInt(localStorage.getItem('tt_lobby_id')||'1');}
+    var saved=getSaved();
+
+    // 重建面板UI
+    function rebuildPanel(){
+      var old=document.getElementById('tt-lobby-panel');
+      if(old)old.remove();
+      var cur=getSaved();
+      var panel=document.createElement('div');
+      panel.id='tt-lobby-panel';
+      panel.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;user-select:none;background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;padding:12px;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);border:1px solid rgba(99,102,241,.3);min-width:220px;';
+      panel.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1);"><span style="font-size:20px">🏰</span><span style="font-weight:700;font-size:15px;flex:1">大厅切换</span><span id="tt-lobby-close" style="cursor:pointer;opacity:.6;font-size:18px;line-height:1">×</span></div><div style="font-size:11px;color:#94a3b8;margin-bottom:8px">当前: <b id="tt-lobby-current" style="color:#a5b4fc">Lobby '+cur+'</b></div><div id="tt-lobby-list" style="display:flex;flex-direction:column;gap:6px"></div>';
+      document.body.appendChild(panel);
+      var list=document.getElementById('tt-lobby-list');
+      LOBBIES.forEach(function(l){
+        var isCur=l.id===cur;
+        var btn=document.createElement('div');
+        btn.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;background:'+(isCur?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)')+';border:1px solid '+(isCur?'#6366f1':'rgba(255,255,255,.08)')+';transition:all .15s;';
+        btn.innerHTML='<span style="font-size:20px">'+l.icon+'</span><div style="flex:1"><div style="font-size:14px;font-weight:600">'+l.name+'</div><div style="font-size:10px;color:#94a3b8">'+l.desc+'</div></div>'+(isCur?'<span style="color:#10b981;font-size:16px">✓</span>':'');
+        btn.onmouseenter=function(){if(!isCur)btn.style.background='rgba(255,255,255,.08)';};
+        btn.onmouseleave=function(){btn.style.background=isCur?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)';};
+        btn.onclick=function(){
+          if(l.id===cur)return;
+          localStorage.setItem('tt_lobby_id',l.id.toString());
+          localStorage.setItem('tt_lobby_host',hosts[l.id]);
+          rebuildPanel();
+          try{
+            if(typeof aiCommand746==='function'){aiCommand746(0);}
+            else if(typeof window.aiCommand746==='function'){window.aiCommand746(0);}
+          }catch(e){console.log('[TT] aiCommand746 error:',e);}
+        };
+        list.appendChild(btn);
+      });
+      document.getElementById('tt-lobby-close').onclick=function(){panel.remove();};
+    }
+
+    rebuildPanel();
+
+    // 注入WebSocket钩子（只注入一次）
     if(!window._ttOrigWS){
       window._ttOrigWS=window.WebSocket;
-      var curId=saved;
       window.WebSocket=function(u,p){
         var M=u;
         if(u&&typeof u==='string'){
           try{
             var U=new URL(u);
             if(U.hostname.includes('territorial.io')&&U.pathname==='/s52/'){
-              var hosts=['territorial.io','1.territorial.io','2.territorial.io'];
-              U.hostname=hosts[curId]||'1.territorial.io';
+              var id=parseInt(localStorage.getItem('tt_lobby_id')||'1');
+              U.hostname=hosts[id]||'1.territorial.io';
               M=U.toString();
+              console.log('[TT Lobby] WS→',M);
             }
           }catch(e){}
         }
-        var w=p?new window._ttOrigWS(M,p):new window._ttOrigWS(M);
+        var w;
+        if(p&&Array.isArray(p)){w=new window._ttOrigWS(M,p);}
+        else if(p){w=new window._ttOrigWS(M,p);}
+        else{w=new window._ttOrigWS(M);}
         return w;
       };
       window.WebSocket.prototype=window._ttOrigWS.prototype;
       window.WebSocket.prototype.constructor=window.WebSocket;
+      try{
+        Object.defineProperty(window.WebSocket,'name',{value:'WebSocket',configurable:true});
+      }catch(e){}
       window.WebSocket.toString=function(){return window._ttOrigWS.toString()};
       window.WebSocket.OPEN=window._ttOrigWS.OPEN;
       window.WebSocket.CLOSED=window._ttOrigWS.CLOSED;
       window.WebSocket.CLOSING=window._ttOrigWS.CLOSING;
       window.WebSocket.CONNECTING=window._ttOrigWS.CONNECTING;
-      window._ttLobbyOnSelect=function(id){
-        curId=id;
-        var c=document.getElementById('tt-lobby-current');
-        if(c)c.textContent='Lobby '+id;
-        try{
-          if(typeof window.aiCommand746==='function'){
-            window.aiCommand746(0);
-          }
-        }catch(e){}
-      };
+      console.log('[TT Lobby] WebSocket hook installed');
     }
   })();`;
 };

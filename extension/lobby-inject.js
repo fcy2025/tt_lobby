@@ -18,7 +18,8 @@
       const parsedUrl = new URL(url);
       if (parsedUrl.hostname.includes('territorial.io') && parsedUrl.pathname === '/s52/') {
         isTT = true;
-        parsedUrl.hostname = servers[currentLobby];
+        const h = localStorage.getItem('tt_lobby_host') || servers[currentLobby];
+        parsedUrl.hostname = h;
         targetUrl = parsedUrl.toString();
         console.log('[TT Lobby] WebSocket redirected to:', targetUrl);
       }
@@ -55,7 +56,5 @@
   });
 
   window.ttLobbyId = currentLobby;
-  localStorage.removeItem('tt_lobby_host');
-  localStorage.removeItem('tt_lobby_id');
   console.log('[TT Lobby] Script loaded successfully! Current: Lobby', currentLobby);
 })();

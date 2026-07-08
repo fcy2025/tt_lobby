@@ -13,27 +13,33 @@ function App() {
   const getScript = (lobbyId: number) => {
     const host = LOBBIES[lobbyId].host;
     return `(function(){
-      if(!window._ttOrigWS){window._ttOrigWS=window.WebSocket}
-      var O=window._ttOrigWS;
-      var N=function(u,p){
-        var M=u;
-        if(u&&typeof u==='string'){
-          try{
-            var U=new URL(u);
-            if(U.hostname.includes('territorial.io')&&U.pathname==='/s52/'){
-              U.hostname='${host}';
-              M=U.toString();
-            }
-          }catch(e){}
-        }
-        var w=p?new O(M,p):new O(M);
-        return w;
-      };
-      N.prototype=O.prototype;
-      N.prototype.constructor=N;
-      N.toString=function(){return O.toString()};
-      N.OPEN=O.OPEN;N.CLOSED=O.CLOSED;N.CLOSING=O.CLOSING;N.CONNECTING=O.CONNECTING;
-      window.WebSocket=N;
+      localStorage.setItem('tt_lobby_id','${lobbyId}');
+      localStorage.setItem('tt_lobby_host','${host}');
+      if(!window._ttOrigWS){
+        window._ttOrigWS=window.WebSocket;
+        window.WebSocket=function(u,p){
+          var M=u;
+          if(u&&typeof u==='string'){
+            try{
+              var U=new URL(u);
+              if(U.hostname.includes('territorial.io')&&U.pathname==='/s52/'){
+                var h=localStorage.getItem('tt_lobby_host')||'1.territorial.io';
+                U.hostname=h;
+                M=U.toString();
+              }
+            }catch(e){}
+          }
+          var w=p?new window._ttOrigWS(M,p):new window._ttOrigWS(M);
+          return w;
+        };
+        window.WebSocket.prototype=window._ttOrigWS.prototype;
+        window.WebSocket.prototype.constructor=window.WebSocket;
+        window.WebSocket.toString=function(){return window._ttOrigWS.toString()};
+        window.WebSocket.OPEN=window._ttOrigWS.OPEN;
+        window.WebSocket.CLOSED=window._ttOrigWS.CLOSED;
+        window.WebSocket.CLOSING=window._ttOrigWS.CLOSING;
+        window.WebSocket.CONNECTING=window._ttOrigWS.CONNECTING;
+      }
       if(window.location.hostname.includes('territorial.io')||window.location.hostname.includes('fxclient')){
         alert('✓ 已切换到 Lobby ${lobbyId}\\n页面将刷新');
         setTimeout(function(){window.location.reload()},100);

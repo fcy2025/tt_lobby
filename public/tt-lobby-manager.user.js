@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         TT Lobby Manager
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      2.0
-// @description  自动管理Territorial.io大厅切换，提供浮动按钮快速切换
+// @version      3.0
+// @description  Territorial.io 大厅切换 - 提供浮动控制面板
 // @author       fcy20
 // @match        https://territorial.io/*
 // @match        https://fxclient.github.io/FXclient/*
-// @run-at       document-start
+// @run-at       document-end
 // @grant        none
 // ==/UserScript==
 
@@ -19,13 +19,12 @@
     { id: 2, name: 'Lobby 2', icon: '🟡', host: '2.territorial.io', desc: '备选大厅' },
   ];
 
-  let currentLobbyIndex = 1;
+  let currentLobby = 1;
   try {
     const stored = localStorage.getItem('tt_lobby_id');
-    if (stored !== null) currentLobbyIndex = parseInt(stored);
+    if (stored !== null) currentLobby = parseInt(stored);
   } catch(e) {}
 
-  let targetHost = LOBBIES[currentLobbyIndex].host;
   let scriptInjected = false;
   let originalWS = null;
 
@@ -45,8 +44,9 @@
         try {
           const U = new URL(u);
           if (U.hostname.includes('territorial.io') && U.pathname === '/s52/') {
-            U.hostname = targetHost;
+            U.hostname = LOBBIES[currentLobby].host;
             M = U.toString();
+            console.log('[TT Lobby] WebSocket →', M);
           }
         } catch(e) {}
       }
@@ -62,91 +62,72 @@
 
     window.WebSocket = MyWS;
     scriptInjected = true;
-    console.log('[TT Lobby] WebSocket hook installed for', targetHost);
+    console.log('[TT Lobby] WebSocket hook installed for', LOBBIES[currentLobby].name);
   }
 
-  function switchLobby(index) {
-    if (index < 0 || index >= LOBBIES.length) return;
-    currentLobbyIndex = index;
-    targetHost = LOBBIES[index].host;
+  function switchLobby(id) {
+    if (id < 0 || id >= LOBBIES.length) return;
+    if (id === currentLobby) return;
+    currentLobby = id;
     try {
-      localStorage.setItem('tt_lobby_id', index.toString());
-      localStorage.setItem('tt_lobby_host', targetHost);
+      localStorage.setItem('tt_lobby_id', id.toString());
+      localStorage.setItem('tt_lobby_host', LOBBIES[id].host);
     } catch(e) {}
-    updateFab();
+    updatePanel();
     try {
       if (typeof window.aiCommand746 === 'function') {
         window.aiCommand746(0);
-        showToast('✓ 已切换到 ' + LOBBIES[index].name);
+        showToast('✓ 已切换到 ' + LOBBIES[id].name);
       } else {
-        showToast('✓ 已设置 ' + LOBBIES[index].name + '，点击多人游戏生效');
+        showToast('✓ 已设置 ' + LOBBIES[id].name);
       }
     } catch(e) {
-      showToast('✓ 已设置 ' + LOBBIES[index].name);
+      showToast('✓ 已设置 ' + LOBBIES[id].name);
     }
   }
 
-  function createFab() {
-    if (document.getElementById('tt-lobby-fab')) return;
-    const fab = document.createElement('div');
-    fab.id = 'tt-lobby-fab';
-    fab.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;user-select:none;';
-    fab.innerHTML = `
-      <div id="tt-lobby-main" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.5);display:flex;align-items:center;gap:8px;transition:all .2s;">
-        <span style="font-size:18px">🏰</span>
-        <span class="tt-lobby-label">Lobby ${currentLobbyIndex}</span>
-        <span style="font-size:10px;margin-left:4px">▼</span>
+  function createPanel() {
+    if (document.getElementById('tt-lobby-panel')) return;
+    const panel = document.createElement('div');
+    panel.id = 'tt-lobby-panel';
+    panel.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;user-select:none;background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;padding:12px;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);border:1px solid rgba(99,102,241,.3);min-width:220px;';
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1);">
+        <span style="font-size:20px">🏰</span>
+        <span style="font-weight:700;font-size:15px;flex:1">大厅切换</span>
+        <span id="tt-lobby-close" style="cursor:pointer;opacity:.6;font-size:18px;line-height:1">×</span>
       </div>
-      <div id="tt-lobby-menu" style="display:none;margin-top:8px;background:rgba(15,23,42,.95);border-radius:12px;padding:8px;border:1px solid rgba(99,102,241,.3);box-shadow:0 4px 20px rgba(0,0,0,.5);min-width:200px;">
-        <div style="font-size:11px;color:#8892b0;padding:6px 8px 4px;">选择大厅</div>
-        ${LOBBIES.map((l, i) => `
-          <div class="tt-lobby-item" data-id="${i}" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;background:${i === currentLobbyIndex ? 'rgba(99,102,241,.2)' : 'transparent'};border:1px solid ${i === currentLobbyIndex ? '#6366f1' : 'transparent'};">
-            <span style="font-size:18px">${l.icon}</span>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:500;color:#fff">${l.name}</div>
-              <div style="font-size:10px;color:#8892b0">${l.desc}</div>
-            </div>
-            ${i === currentLobbyIndex ? '<span style="color:#10b981;font-size:14px">✓</span>' : ''}
-          </div>
-        `).join('')}
-      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">当前: <b id="tt-lobby-current" style="color:#a5b4fc">Lobby ${currentLobby}</b></div>
+      <div id="tt-lobby-list" style="display:flex;flex-direction:column;gap:6px"></div>
     `;
-    document.body.appendChild(fab);
+    document.body.appendChild(panel);
 
-    const main = document.getElementById('tt-lobby-main');
-    const menu = document.getElementById('tt-lobby-menu');
-    main.onmouseenter = () => main.style.transform = 'scale(1.05)';
-    main.onmouseleave = () => main.style.transform = 'scale(1)';
-    main.onclick = (e) => {
-      e.stopPropagation();
-      const visible = menu.style.display === 'block';
-      menu.style.display = visible ? 'none' : 'block';
-    };
-
-    fab.querySelectorAll('.tt-lobby-item').forEach(item => {
-      item.onmouseenter = () => { if (!item.style.background.includes('99, 102, 241')) item.style.background = 'rgba(255,255,255,.05)'; };
-      item.onmouseleave = () => { const id = parseInt(item.dataset.id); item.style.background = id === currentLobbyIndex ? 'rgba(99,102,241,.2)' : 'transparent'; };
-      item.onclick = (e) => {
-        e.stopPropagation();
-        const id = parseInt(item.dataset.id);
-        switchLobby(id);
-        setTimeout(() => { menu.style.display = 'none'; }, 300);
-      };
+    const list = document.getElementById('tt-lobby-list');
+    LOBBIES.forEach((l) => {
+      const btn = document.createElement('div');
+      const isCurrent = l.id === currentLobby;
+      btn.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;background:' + (isCurrent ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.03)') + ';border:1px solid ' + (isCurrent ? '#6366f1' : 'rgba(255,255,255,.08)') + ';transition:all .15s;';
+      btn.innerHTML = `
+        <span style="font-size:20px">${l.icon}</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600">${l.name}</div>
+          <div style="font-size:10px;color:#94a3b8">${l.desc}</div>
+        </div>
+        ${isCurrent ? '<span style="color:#10b981;font-size:16px">✓</span>' : ''}
+      `;
+      btn.onmouseenter = () => { if (!isCurrent) btn.style.background = 'rgba(255,255,255,.08)'; };
+      btn.onmouseleave = () => { btn.style.background = (l.id === currentLobby) ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.03)'; };
+      btn.onclick = () => switchLobby(l.id);
+      list.appendChild(btn);
     });
 
-    document.addEventListener('click', () => { menu.style.display = 'none'; });
+    document.getElementById('tt-lobby-close').onclick = () => panel.remove();
   }
 
-  function updateFab() {
-    const label = document.querySelector('.tt-lobby-label');
-    if (label) label.textContent = 'Lobby ' + currentLobbyIndex;
-    const main = document.getElementById('tt-lobby-main');
-    if (main) {
-      main.style.background = 'linear-gradient(135deg,#10b981,#059669)';
-      setTimeout(() => { main.style.background = 'linear-gradient(135deg,#6366f1,#8b5cf6)'; }, 800);
-    }
-    const fab = document.getElementById('tt-lobby-fab');
-    if (fab) createFab();
+  function updatePanel() {
+    const c = document.getElementById('tt-lobby-current');
+    if (c) c.textContent = 'Lobby ' + currentLobby;
+    createPanel();
   }
 
   function showToast(message) {
@@ -154,33 +135,21 @@
     if (old) old.remove();
     const toast = document.createElement('div');
     toast.id = 'tt-lobby-toast';
-    toast.style.cssText = 'position:fixed;top:80px;right:20px;z-index:100000;background:rgba(16,185,129,.95);color:#fff;padding:10px 16px;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 15px rgba(16,185,129,.4);animation:ttToastIn .3s ease;';
+    toast.style.cssText = 'position:fixed;top:80px;right:20px;z-index:100000;background:rgba(16,185,129,.95);color:#fff;padding:10px 16px;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 15px rgba(16,185,129,.4);';
     toast.textContent = message;
     document.body.appendChild(toast);
     setTimeout(() => { if (toast.parentNode) toast.remove(); }, 2500);
   }
 
-  // 注入 WebSocket 钩子
-  injectWSHook();
-
-  // 在 document-start 时立即执行钩子，后续也需要在 DOMContentLoaded 后再次确保
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      injectWSHook();
-      createFab();
-    });
-  } else {
+  function init() {
     injectWSHook();
-    createFab();
+    createPanel();
   }
 
-  // 监听可能的 SPA 重新初始化
-  let lastAiCmd = window.aiCommand746;
-  setInterval(() => {
-    if (window.aiCommand746 !== lastAiCmd) {
-      lastAiCmd = window.aiCommand746;
-      console.log('[TT Lobby] Game re-initialized');
-    }
-  }, 1000);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
 })();

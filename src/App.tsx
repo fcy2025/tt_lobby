@@ -1,46 +1,43 @@
 import { useState } from 'react';
 
-const LOBBIES = [
-  { id: 0, name: 'Lobby 0', icon: '🟢', host: 'territorial.io', desc: '备用大厅', color: 'from-green-500 to-emerald-600' },
-  { id: 1, name: 'Lobby 1', icon: '🔴', host: '1.territorial.io', desc: '默认主大厅', color: 'from-red-500 to-rose-600' },
-  { id: 2, name: 'Lobby 2', icon: '🟡', host: '2.territorial.io', desc: '备选大厅', color: 'from-yellow-500 to-amber-600' },
-];
-
-// 注入到游戏页面的浮动 UI 脚本
-const getInjectUIScript = (lobbyId: number) => {
-  const host = LOBBIES[lobbyId].host;
+// 注入到游戏页面的浮动控制面板脚本
+const getPanelScript = (): string => {
   return `(function(){
-    var h='${host}';
-    var lid=${lobbyId};
-    if(document.getElementById('tt-lobby-fab')){
-      var fab=document.getElementById('tt-lobby-fab');
-      fab.querySelector('.tt-lobby-label').textContent='Lobby '+lid;
-      fab.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';
-    }else{
-      var fab=document.createElement('div');
-      fab.id='tt-lobby-fab';
-      fab.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:10px 16px;border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.5);user-select:none;transition:all .2s;display:flex;align-items:center;gap:8px;';
-      fab.innerHTML='<span style="font-size:18px">🏰</span><span class="tt-lobby-label">Lobby '+lid+'</span>';
-      fab.onmouseenter=function(){fab.style.transform='scale(1.05)';};
-      fab.onmouseleave=function(){fab.style.transform='scale(1)';};
-      fab.onclick=function(){
-        if(typeof window.aiCommand746==='function'){
-          try{window.aiCommand746(0);fab.style.background='linear-gradient(135deg,#10b981,#059669)';setTimeout(function(){fab.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';},1000);}catch(e){location.reload();}
-        }else{
-          location.reload();
-        }
+    if(document.getElementById('tt-lobby-panel'))return;
+    var saved=parseInt(localStorage.getItem('tt_lobby_id')||'1');
+    var panel=document.createElement('div');
+    panel.id='tt-lobby-panel';
+    panel.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;user-select:none;background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;padding:12px;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.5);border:1px solid rgba(99,102,241,.3);min-width:220px;';
+    panel.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1);"><span style="font-size:20px">🏰</span><span style="font-weight:700;font-size:15px;flex:1">大厅切换</span><span id="tt-lobby-close" style="cursor:pointer;opacity:.6;font-size:18px;line-height:1">×</span></div><div style="font-size:11px;color:#94a3b8;margin-bottom:8px">当前: <b id="tt-lobby-current" style="color:#a5b4fc">Lobby '+saved+'</b></div><div id="tt-lobby-list" style="display:flex;flex-direction:column;gap:6px"></div>';
+    document.body.appendChild(panel);
+    var list=document.getElementById('tt-lobby-list');
+    var LOBBIES=[{id:0,name:'Lobby 0',icon:'🟢',color:'#10b981',desc:'备用大厅'},{id:1,name:'Lobby 1',icon:'🔴',color:'#ef4444',desc:'默认主大厅'},{id:2,name:'Lobby 2',icon:'🟡',color:'#f59e0b',desc:'备选大厅'}];
+    LOBBIES.forEach(function(l){
+      var btn=document.createElement('div');
+      btn.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;background:'+(l.id===saved?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)')+';border:1px solid '+(l.id===saved?'#6366f1':'rgba(255,255,255,.08)')+';transition:all .15s;';
+      btn.innerHTML='<span style="font-size:20px">'+l.icon+'</span><div style="flex:1"><div style="font-size:14px;font-weight:600">'+l.name+'</div><div style="font-size:10px;color:#94a3b8">'+l.desc+'</div></div>'+(l.id===saved?'<span style="color:#10b981;font-size:16px">✓</span>':'');
+      btn.onmouseenter=function(){if(l.id!==saved)btn.style.background='rgba(255,255,255,.08)';};
+      btn.onmouseleave=function(){btn.style.background=l.id===saved?'rgba(99,102,241,.2)':'rgba(255,255,255,.03)';};
+      btn.onclick=function(){
+        if(l.id===saved)return;
+        localStorage.setItem('tt_lobby_id',l.id.toString());
+        localStorage.setItem('tt_lobby_host',['territorial.io','1.territorial.io','2.territorial.io'][l.id]);
+        if(window._ttLobbyOnSelect)window._ttLobbyOnSelect(l.id);
       };
-      document.body.appendChild(fab);
-    }
+      list.appendChild(btn);
+    });
+    document.getElementById('tt-lobby-close').onclick=function(){panel.remove();};
     if(!window._ttOrigWS){
       window._ttOrigWS=window.WebSocket;
+      var curId=saved;
       window.WebSocket=function(u,p){
         var M=u;
         if(u&&typeof u==='string'){
           try{
             var U=new URL(u);
             if(U.hostname.includes('territorial.io')&&U.pathname==='/s52/'){
-              U.hostname=h;
+              var hosts=['territorial.io','1.territorial.io','2.territorial.io'];
+              U.hostname=hosts[curId]||'1.territorial.io';
               M=U.toString();
             }
           }catch(e){}
@@ -55,23 +52,29 @@ const getInjectUIScript = (lobbyId: number) => {
       window.WebSocket.CLOSED=window._ttOrigWS.CLOSED;
       window.WebSocket.CLOSING=window._ttOrigWS.CLOSING;
       window.WebSocket.CONNECTING=window._ttOrigWS.CONNECTING;
+      window._ttLobbyOnSelect=function(id){
+        curId=id;
+        var c=document.getElementById('tt-lobby-current');
+        if(c)c.textContent='Lobby '+id;
+        try{
+          if(typeof window.aiCommand746==='function'){
+            window.aiCommand746(0);
+          }
+        }catch(e){}
+      };
     }
   })();`;
 };
 
-// 书签脚本：注入浮动 UI 按钮
-const getScript = (lobbyId: number) => {
-  const host = LOBBIES[lobbyId].host;
+// 书签脚本：点击后注入控制面板
+const getBookmarkScript = (): string => {
   return `(function(){
-    var h='${host}';
-    localStorage.setItem('tt_lobby_host',h);
-    localStorage.setItem('tt_lobby_id','${lobbyId}');
     var inGame=window.location.hostname.includes('territorial.io')||window.location.hostname.includes('fxclient');
-    if(!inGame){alert('请先打开游戏页面');return;}
+    if(!inGame){alert('请先打开游戏页面（territorial.io）后再使用此书签');return;}
     var s=document.createElement('script');
-    s.textContent=${JSON.stringify(getInjectUIScript(lobbyId))};
+    s.textContent=${JSON.stringify(getPanelScript())};
     document.body.appendChild(s);
-  })();`.replace(/\n\s*/g, '');
+  })();`;
 };
 
 const getBaseUrl = (): string => {
@@ -83,17 +86,17 @@ const getBaseUrl = (): string => {
 };
 
 function App() {
-  const [copied, setCopied] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'bookmark' | 'userscript' | 'script'>('bookmark');
+  const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'bookmark' | 'userscript'>('bookmark');
 
-  const getBookmarkUrl = (lobbyId: number) => {
-    return `javascript:${encodeURIComponent(getScript(lobbyId))}`;
+  const getBookmarkUrl = (): string => {
+    return `javascript:${encodeURIComponent(getBookmarkScript())}`;
   };
 
-  const copyText = async (text: string, id: number) => {
+  const copyText = async (text: string): Promise<void> => {
     await navigator.clipboard.writeText(text);
-    setCopied(id);
-    setTimeout(() => setCopied(null), 2000);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -128,7 +131,7 @@ function App() {
                   : 'bg-slate-800/50 text-gray-400 hover:bg-slate-700/50'
               }`}
             >
-              📌 浮动按钮
+              📌 控制面板
             </button>
             <button
               onClick={() => setActiveTab('userscript')}
@@ -147,71 +150,67 @@ function App() {
               <div className="bg-indigo-900/20 rounded-lg p-3 border border-indigo-900/30">
                 <p className="text-xs text-indigo-300 mb-2">💡 使用方法（推荐）</p>
                 <div className="text-xs text-gray-400 space-y-1">
-                  <p>1. 拖拽下方按钮到收藏夹栏</p>
+                  <p>1. <b>拖拽下方按钮</b>到浏览器收藏夹栏</p>
                   <p>2. 打开游戏页面（territorial.io）</p>
-                  <p>3. 点击书签 → 右上角出现 🏰 浮动按钮</p>
-                  <p>4. 点击浮动按钮立即切换 lobby</p>
-                  <p>5. 再次点击浮动按钮可切换到其他 lobby</p>
+                  <p>3. 点击书签 → 右上角弹出<b>控制面板</b></p>
+                  <p>4. 点击控制面板里的 Lobby 0/1/2 切换</p>
+                  <p>5. 可多次点击切换，无需刷新页面</p>
                 </div>
               </div>
-              {LOBBIES.map((lobby) => (
-                <a
-                  key={lobby.id}
-                  href={getBookmarkUrl(lobby.id)}
-                  draggable={true}
-                  className={`flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r ${lobby.color} hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-grab active:cursor-grabbing select-none`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    copyText(getBookmarkUrl(lobby.id), lobby.id);
-                  }}
-                >
-                  <span className="text-2xl">{lobby.icon}</span>
-                  <span className="font-bold text-lg">{lobby.name}</span>
-                  {copied === lobby.id && <span className="text-xs text-white/90">已复制链接</span>}
-                </a>
-              ))}
+
+              <a
+                href={getBookmarkUrl()}
+                draggable={true}
+                className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-grab active:cursor-grabbing select-none shadow-lg shadow-indigo-500/30"
+                onClick={(e) => {
+                  e.preventDefault();
+                  copyText(getBookmarkUrl());
+                }}
+              >
+                <span className="text-2xl">🏰</span>
+                <span className="font-bold text-lg">TT Lobby</span>
+                {copied && <span className="text-xs text-white/90">已复制</span>}
+              </a>
+
+              <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700/30">
+                <p className="text-xs text-gray-400 mb-2">📱 移动端使用：</p>
+                <div className="text-xs text-gray-500 space-y-1">
+                  <p>微信/QQ内置浏览器可能不支持书签，请使用"⭐ 油猴脚本"方案</p>
+                </div>
+              </div>
             </div>
           )}
 
           {activeTab === 'userscript' && (
             <div className="space-y-3">
               <div className="bg-amber-900/20 rounded-lg p-3 border border-amber-900/30">
-                <p className="text-xs text-amber-300 mb-2">⭐ 推荐方案（每次刷新自动生效）</p>
+                <p className="text-xs text-amber-300 mb-2">⭐ 最稳定方案（每次刷新自动生效）</p>
                 <div className="text-xs text-gray-400 space-y-1">
                   <p>1. 安装 Tampermonkey 浏览器扩展</p>
                   <p>2. 点击下方"安装脚本"按钮</p>
-                  <p>3. 打开游戏，自动进入对应 lobby</p>
+                  <p>3. 打开游戏，自动应用控制面板</p>
                 </div>
               </div>
-              {LOBBIES.map((lobby) => (
-                <div key={lobby.id} className="flex items-center gap-2">
-                  <div className={`flex-1 flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r ${lobby.color}`}>
-                    <span className="text-xl">{lobby.icon}</span>
-                    <div>
-                      <p className="font-bold text-sm">{lobby.name}</p>
-                      <p className="text-xs text-white/70">{lobby.desc}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      const base = getBaseUrl();
-                      const url = `${window.location.origin}${base}tt-lobby-manager.user.js`;
-                      window.open(url, '_blank');
-                    }}
-                    className="px-3 py-3 rounded-xl font-medium text-sm bg-slate-700 hover:bg-slate-600 text-white"
-                  >
-                    安装
-                  </button>
-                </div>
-              ))}
+
               <button
                 onClick={() => {
                   const base = getBaseUrl();
-                  copyText(`https://${window.location.host}${base}tt-lobby-manager.user.js`, 99);
+                  const url = `${window.location.origin}${base}tt-lobby-manager.user.js`;
+                  window.open(url, '_blank');
+                }}
+                className="w-full p-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:scale-[1.02] active:scale-[0.98] transition-transform font-bold"
+              >
+                📥 安装油猴脚本
+              </button>
+
+              <button
+                onClick={() => {
+                  const base = getBaseUrl();
+                  copyText(`https://${window.location.host}${base}tt-lobby-manager.user.js`);
                 }}
                 className="w-full py-2 px-3 rounded-lg text-xs bg-slate-800/50 text-gray-400 hover:bg-slate-700/50"
               >
-                {copied === 99 ? '✓ 已复制脚本地址' : '📋 复制脚本直链'}
+                {copied ? '✓ 已复制脚本地址' : '📋 复制脚本直链'}
               </button>
             </div>
           )}
@@ -226,29 +225,29 @@ function App() {
             <div className="flex gap-3">
               <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
               <div>
-                <p className="font-medium text-white">打开游戏</p>
-                <p className="text-gray-400 text-xs">在浏览器中打开 territorial.io</p>
+                <p className="font-medium text-white">添加书签</p>
+                <p className="text-gray-400 text-xs">拖拽"TT Lobby"按钮到收藏夹栏</p>
               </div>
             </div>
             <div className="flex gap-3">
               <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
               <div>
-                <p className="font-medium text-white">点击书签</p>
-                <p className="text-gray-400 text-xs">点击对应大厅书签，右上角出现 🏰 浮动按钮</p>
+                <p className="font-medium text-white">打开游戏</p>
+                <p className="text-gray-400 text-xs">在浏览器打开 territorial.io</p>
               </div>
             </div>
             <div className="flex gap-3">
               <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
               <div>
-                <p className="font-medium text-white">点击浮动按钮</p>
-                <p className="text-gray-400 text-xs">点击 🏰 按钮立即切换，无需刷新</p>
+                <p className="font-medium text-white">点击书签</p>
+                <p className="text-gray-400 text-xs">弹出控制面板，显示当前 Lobby</p>
               </div>
             </div>
             <div className="flex gap-3">
               <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
               <div>
-                <p className="font-medium text-white">切换其他 lobby</p>
-                <p className="text-gray-400 text-xs">点击其他书签 → 点击新的 🏰 按钮</p>
+                <p className="font-medium text-white">选择 Lobby</p>
+                <p className="text-gray-400 text-xs">点击目标 Lobby 立即切换</p>
               </div>
             </div>
           </div>

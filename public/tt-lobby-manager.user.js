@@ -40,14 +40,16 @@
           if (isTT) {
             const id = getSaved();
             const targetHost = hosts[id] || '1.territorial.io';
-            const xMatch = path.match(/^\/x0(\d)\/$/);
-            if (xMatch) {
-              U.pathname = '/x0' + id + '/';
-              if (host !== 'game.territorial.io') {
-                U.hostname = targetHost;
+            if (path.length === 5 && path.charAt(0) === '/' && path.charAt(1) === 'x' && path.charAt(2) === '0') {
+              const xId = parseInt(path.charAt(3));
+              if (!isNaN(xId)) {
+                U.pathname = '/x0' + id + '/';
+                if (host !== 'game.territorial.io') {
+                  U.hostname = targetHost;
+                }
+                M = U.toString();
+                console.log('[TT] WS x0→', M);
               }
-              M = U.toString();
-              console.log('[TT] WS x0→', M);
             } else if (path === '/s50/' || path === '/s51/' || path === '/s52/') {
               U.hostname = targetHost;
               M = U.toString();

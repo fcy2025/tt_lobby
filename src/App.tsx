@@ -27,28 +27,22 @@ const getPanelScript = (): string => {
               var id=getSaved();
               var targetHost=hosts[id]||'1.territorial.io';
               // Handle /x0N/ paths (e.g., /x01/ -> /x0{id}/)
-              var xMatch=path.match(/^\/x0(\d)\/$/);
-              if(xMatch){
-                U.pathname='/x0'+id+'/';
-                if(host==='game.territorial.io'){
-                  // keep game.territorial.io for x0 paths
-                }else{
-                  U.hostname=targetHost;
+              if(path.length===5&&path.charAt(0)==='/'&&path.charAt(1)==='x'&&path.charAt(2)==='0'){
+                var xId=parseInt(path.charAt(3));
+                if(!isNaN(xId)){
+                  U.pathname='/x0'+id+'/';
+                  if(host!=='game.territorial.io'){
+                    U.hostname=targetHost;
+                  }
+                  M=U.toString();
+                  console.log('[TT] WS x0→',M);
                 }
-                M=U.toString();
-                console.log('[TT] WS x0→',M);
               }
               // Handle /s50/, /s51/, /s52/ paths
               else if(path==='/s50/'||path==='/s51/'||path==='/s52/'){
                 U.hostname=targetHost;
                 M=U.toString();
                 console.log('[TT] WS s→',M);
-              }
-              // Handle /s52/ from error reporting or other paths
-              else if(path==='/s52/'){
-                U.hostname=targetHost;
-                M=U.toString();
-                console.log('[TT] WS err→',M);
               }
             }
           }catch(e){console.log('[TT] URL parse error:',e);}

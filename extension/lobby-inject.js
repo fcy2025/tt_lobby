@@ -15,12 +15,28 @@
     let isTT = false;
     try {
       const parsedUrl = new URL(url);
-      if (parsedUrl.hostname.includes('territorial.io') && parsedUrl.pathname === '/s52/') {
+      const host = parsedUrl.hostname;
+      const path = parsedUrl.pathname;
+      const ttHost = host === 'territorial.io' || host === '1.territorial.io' || host === '2.territorial.io' || host === 'game.territorial.io';
+      if (ttHost) {
+        const id = parseInt(localStorage.getItem('tt_lobby_id') || '1');
+        const targetHost = servers[id] || servers[currentLobby];
+        if (path.length === 5 && path.charAt(0) === '/' && path.charAt(1) === 'x' && path.charAt(2) === '0') {
+          const xId = parseInt(path.charAt(3));
+          if (!isNaN(xId)) {
+            parsedUrl.pathname = '/x0' + id + '/';
+            if (host !== 'game.territorial.io') {
+              parsedUrl.hostname = targetHost;
+            }
+            targetUrl = parsedUrl.toString();
+            console.log('[TT Lobby] WS x0→', targetUrl);
+          }
+        } else if (path === '/s50/' || path === '/s51/' || path === '/s52/') {
+          parsedUrl.hostname = targetHost;
+          targetUrl = parsedUrl.toString();
+          console.log('[TT Lobby] WS s→', targetUrl);
+        }
         isTT = true;
-        const h = localStorage.getItem('tt_lobby_host') || servers[currentLobby];
-        parsedUrl.hostname = h;
-        targetUrl = parsedUrl.toString();
-        console.log('[TT Lobby] WebSocket redirected to:', targetUrl);
       }
     } catch(e) {}
     const ws = new originalWebSocket(targetUrl, protocols);

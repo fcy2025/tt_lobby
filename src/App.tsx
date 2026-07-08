@@ -1,8 +1,11 @@
 import { useState } from 'react';
 
-// 核心注入脚本 - 最简化版本，避免任何兼容性问题
+// 压缩JS代码为单行
+const minify = (code: string): string => code.replace(/\n\s*/g, '');
+
+// 核心注入脚本
 const getCoreScript = (): string => {
-  return `(function(){
+  return minify(`(function(){
     if(window._ttHook)return;
     window._ttHook=true;
     var O=window.WebSocket;
@@ -26,20 +29,19 @@ const getCoreScript = (): string => {
     window.WebSocket.CLOSING=2;
     window.WebSocket.CLOSED=3;
     console.log('[TT] Hook OK lobby='+getId());
-  })();`;
+  })();`);
 };
 
 // 控制面板脚本
 const getPanelScript = (): string => {
   const core = getCoreScript().replace(/'/g, "\\'");
-  return `(function(){
+  return minify(`(function(){
     ${core}
     var H=['territorial.io','1.territorial.io','2.territorial.io'];
     function getId(){try{return parseInt(localStorage.getItem('tt_lobby_id')||'1');}catch(e){return 1;}}
     function setId(id){localStorage.setItem('tt_lobby_id',id);localStorage.setItem('tt_lobby_host',H[id]);}
     var old=document.getElementById('tt-panel');
     if(old)old.remove();
-    var cur=getId();
     var d=document.createElement('div');
     d.id='tt-panel';
     d.style='position:fixed;top:10px;right:10px;z-index:99999;background:#1e293b;color:#fff;padding:10px;border-radius:10px;font-family:sans-serif;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,.5);border:1px solid #6366f1;min-width:180px;';
@@ -67,19 +69,19 @@ const getPanelScript = (): string => {
     }
     render();
     document.getElementById('tt-close').onclick=function(){d.remove();};
-  })();`;
+  })();`);
 };
 
 // 书签脚本
 const getBookmarkScript = (): string => {
   const panel = getPanelScript().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  return `(function(){
+  return minify(`(function(){
     var ok=window.location.hostname.indexOf('territorial.io')>-1||window.location.hostname.indexOf('fxclient')>-1;
     if(!ok){alert('请先打开游戏页面');return;}
     var s=document.createElement('script');
     s.textContent='${panel}';
     document.body.appendChild(s);
-  })();`;
+  })();`);
 };
 
 function App() {

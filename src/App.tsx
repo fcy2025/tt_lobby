@@ -160,7 +160,7 @@ function App() {
             </div>
             <div className="flex items-start gap-3">
               <span className="text-amber-400 font-bold">5</span>
-              <span>点击"关闭工具"恢复原始连接并刷新</span>
+              <span>关闭工具后恢复原始连接</span>
             </div>
           </div>
         </div>

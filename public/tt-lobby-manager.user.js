@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TT Lobby 0
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      7.7
+// @version      7.9
 // @description  快捷连接到 Territorial.io Lobby 0
 // @author       fcy20
 // @match        https://territorial.io/*
@@ -24,7 +24,8 @@
     localStorage.setItem('tt_lobby_enabled', '1');
     localStorage.setItem('tt_lobby_id', '0');
     localStorage.setItem('tt_lobby_host', L0);
-    location.reload();
+    installHook();
+    render();
   }
 
   function turnOff() {
@@ -32,12 +33,13 @@
     localStorage.removeItem('tt_lobby_id');
     localStorage.removeItem('tt_lobby_host');
     if (window._ttOrigWS) window.WebSocket = window._ttOrigWS;
-    window._ttHook = 0;
-    location.reload();
+    window._ttHooked = 0;
+    render();
   }
 
-  if (!window._ttHook) {
-    window._ttHook = 1;
+  function installHook() {
+    if (window._ttHooked) return;
+    window._ttHooked = 1;
     window._ttOrigWS = window.WebSocket;
     var O = window.WebSocket;
 
@@ -70,7 +72,10 @@
     window.WebSocket.OPEN = 1;
     window.WebSocket.CLOSING = 2;
     window.WebSocket.CLOSED = 3;
+    console.log('[TT] Hook installed');
   }
+
+  installHook();
 
   function createPanel() {
     var ow = document.getElementById('tt-wrap');
@@ -88,7 +93,7 @@
     hdr.style.cssText = 'display:flex;align-items:center;margin-bottom:12px;';
     hdr.innerHTML = '<span style="font-size:18px;margin-right:8px;">🏰</span><div><div style="font-weight:600;font-size:14px;">Lobby 0</div><div style="font-size:10px;color:#94a3b8;">快捷工具</div></div>';
 
-    function render() {
+    window.render = function() {
       var on = isOn();
       var sw = document.createElement('div');
       sw.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:' + (on ? 'rgba(16,185,129,0.2)' : 'rgba(75,85,99,0.3)') + ';border:1px solid ' + (on ? 'rgba(16,185,129,0.5)' : 'rgba(75,85,99,0.5)') + ';cursor:pointer;';
@@ -101,9 +106,9 @@
 
       var tip = document.createElement('div');
       tip.style.cssText = 'margin-top:10px;padding:8px;border-radius:8px;font-size:11px;line-height:1.4;background:' + (on ? 'rgba(16,185,129,0.1)' : 'rgba(251,191,36,0.1)') + ';color:' + (on ? '#6ee7b7' : '#fbbf24') + ';';
-      tip.textContent = on ? '页面已刷新，点击多人游戏进入 Lobby 0' : '点击开启后页面将刷新';
+      tip.textContent = on ? '退出大厅后重新进入多人游戏' : '点击开启后连接到 Lobby 0';
       d.appendChild(tip);
-    }
+    };
 
     render();
     wrap.appendChild(d);

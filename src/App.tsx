@@ -5,98 +5,83 @@ const getBookmarkCode = (): string => {
   code += "var ok=location.hostname.indexOf('territorial.io')>-1||location.hostname.indexOf('fxclient')>-1;";
   code += "if(!ok){alert('请先打开游戏页面');return;}";
   code += "var L0='territorial.io';";
-  code += "function isOn(){try{return localStorage.getItem('tt_lobby_enabled')==='1';}catch(e){return false;}}";
-  code += "function turnOn(){localStorage.setItem('tt_lobby_enabled','1');localStorage.setItem('tt_lobby_id','0');localStorage.setItem('tt_lobby_host',L0);}";
-  code += "function turnOff(){localStorage.removeItem('tt_lobby_enabled');localStorage.removeItem('tt_lobby_id');localStorage.removeItem('tt_lobby_host');location.reload();}";
+  code += "function _ttG(){try{return localStorage.getItem('tt_lobby_enabled')==='1';}catch(e){return false;}}";
+  code += "function _ttE(){localStorage.setItem('tt_lobby_enabled','1');localStorage.setItem('tt_lobby_id','0');localStorage.setItem('tt_lobby_host',L0);}";
+  code += "function _ttD(){localStorage.removeItem('tt_lobby_enabled');localStorage.removeItem('tt_lobby_id');localStorage.removeItem('tt_lobby_host');location.reload();}";
   // WebSocket Hook
   code += "if(!window._ttHook){";
-  code += "window._ttHook=1;window._ttOrigWS=window.WebSocket;var O=window.WebSocket;";
+  code += "window._ttHook=1;";
+  code += "window._ttOrigWS=window.WebSocket;";
+  code += "var O=window.WebSocket;";
   code += "window.WebSocket=function(u,p){";
-  code += "var M=u;if(!isOn()){return p?new O(u,p):new O(u);}";
+  code += "var M=u;";
+  code += "if(_ttG()){";
   code += "try{";
-  code += "var pu=new URL(u);var ph=pu.hostname;var pp=pu.pathname;";
+  code += "var pu=new URL(u);";
+  code += "var ph=pu.hostname;";
+  code += "var pp=pu.pathname;";
   code += "var tt=ph==='territorial.io'||ph==='1.territorial.io'||ph==='2.territorial.io'||ph==='game.territorial.io';";
   code += "if(tt){";
-  code += "if(pp.length===5&&pp.charAt(0)==='/'&&pp.charAt(1)==='x'&&pp.charAt(2)==='0'){pu.pathname='/x00/';if(ph!=='game.territorial.io')pu.hostname=L0;M=pu.toString();}";
-  code += "else if(pp==='/s50/'||pp==='/s51/'||pp==='/s52/'){pu.hostname=L0;M=pu.toString();}";
+  code += "if(pp.length===5&&pp.charAt(0)==='/'&&pp.charAt(1)==='x'&&pp.charAt(2)==='0'){";
+  code += "pu.pathname='/x00/';";
+  code += "if(ph!=='game.territorial.io')pu.hostname=L0;";
+  code += "M=pu.toString();";
+  code += "}else if(pp==='/s50/'||pp==='/s51/'||pp==='/s52/'){";
+  code += "pu.hostname=L0;";
+  code += "M=pu.toString();";
   code += "}";
-  code += "}catch(e){}return p?new O(M,p):new O(M);";
+  code += "}";
+  code += "}catch(e){}";
+  code += "}";
+  code += "return p?new O(M,p):new O(M);";
   code += "};";
-  code += "window.WebSocket.prototype=O.prototype;window.WebSocket.prototype.constructor=window.WebSocket;";
+  code += "window.WebSocket.prototype=O.prototype;";
+  code += "window.WebSocket.prototype.constructor=window.WebSocket;";
   code += "window.WebSocket.toString=function(){return O.toString();};";
   code += "window.WebSocket.CONNECTING=0;window.WebSocket.OPEN=1;window.WebSocket.CLOSING=2;window.WebSocket.CLOSED=3;";
   code += "}";
-  // Modify aUa
-  code += "function modAua(){";
-  code += "if(!isOn())return false;";
-  code += "if(window.b1&&window.b1.z&&window.b1.z.aUa){for(var i=0;i<window.b1.z.aUa.length;i++)window.b1.z.aUa[i]=L0;return true;}";
+  // Modify b1.z.aUa
+  code += "function _ttM(){";
+  code += "if(_ttG()&&window.b1&&window.b1.z&&window.b1.z.aUa){";
+  code += "for(var i=0;i<window.b1.z.aUa.length;i++)window.b1.z.aUa[i]=L0;";
+  code += "return true;";
+  code += "}";
   code += "return false;";
   code += "}";
-  code += "modAua();";
-  code += "var b1T=setInterval(function(){if(modAua())clearInterval(b1T);},300);";
+  code += "_ttM();";
+  code += "var b1T=setInterval(function(){if(_ttM())clearInterval(b1T);},300);";
   code += "setTimeout(function(){clearInterval(b1T);},10000);";
-  // UI - Mini Button
-  code += "var oldBtn=document.getElementById('tt-toggle-btn');if(oldBtn)oldBtn.remove();";
-  code += "var oldPanel=document.getElementById('tt-panel');if(oldPanel)oldPanel.remove();";
-  code += "var btn=document.createElement('div');btn.id='tt-toggle-btn';";
-  code += "btn.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;width:44px;height:44px;border-radius:50%;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);border:1px solid rgba(99,102,241,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:all 0.3s ease;';";
-  code += "btn.title='Lobby 0';";
-  // Panel
-  code += "var panel=document.createElement('div');panel.id='tt-panel';";
-  code += "panel.style.cssText='position:fixed;top:70px;right:20px;z-index:99998;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:20px;border-radius:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.6);border:1px solid rgba(99,102,241,0.4);min-width:240px;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.3s ease;';";
-  // Update Button
-  code += "function updBtn(){";
-  code += "var on=isOn();";
-  code += "btn.textContent=on?'🟢':'⚪';";
-  code += "btn.style.borderColor=on?'rgba(16,185,129,0.6)':'rgba(99,102,241,0.4)';";
-  code += "btn.style.boxShadow=on?'0 4px 20px rgba(16,185,129,0.4)':'0 4px 20px rgba(0,0,0,0.5)';";
-  code += "}";
-  // Update Panel
-  code += "function updPanel(){";
-  code += "var on=isOn();panel.innerHTML='';";
+  // UI Panel
+  code += "var old=document.getElementById('tt-panel');";
+  code += "if(old)old.remove();";
+  code += "var d=document.createElement('div');";
+  code += "d.id='tt-panel';";
+  code += "d.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);min-width:180px;';";
   // Header
   code += "var hdr=document.createElement('div');";
-  code += "hdr.style.cssText='display:flex;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(51,65,85,0.6);';";
-  code += "hdr.innerHTML='<span style=\"font-size:24px;margin-right:10px;\">🏰</span><div><div style=\"font-weight:600;font-size:15px;\">Lobby 0</div><div style=\"font-size:11px;color:#94a3b8;\">'+(on?'已启用':'已关闭')+'</div></div>';";
-  code += "panel.appendChild(hdr);";
-  // Switch
-  code += "var swRow=document.createElement('div');";
-  code += "swRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:12px;background:rgba(255,255,255,0.05);border-radius:12px;';";
-  code += "var lbl=document.createElement('span');lbl.style.cssText='font-weight:500;font-size:14px;';lbl.textContent='启用 Lobby 0';swRow.appendChild(lbl);";
-  code += "var sw=document.createElement('button');";
-  code += "sw.style.cssText='width:48px;height:28px;border-radius:14px;border:none;cursor:pointer;transition:all 0.3s ease;position:relative;';";
-  code += "sw.style.background=on?'#10b981':'#334155';";
-  code += "var knob=document.createElement('div');";
-  code += "knob.style.cssText='position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:2px;transition:all 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);';";
-  code += "knob.style.left=on?'22px':'2px';sw.appendChild(knob);";
+  code += "hdr.style.cssText='display:flex;align-items:center;margin-bottom:12px;';";
+  code += "hdr.innerHTML='<span style=\"font-size:18px;margin-right:8px;\">🏰</span><div><div style=\"font-weight:600;font-size:14px;\">Lobby 0</div><div style=\"font-size:10px;color:#94a3b8;\">快捷工具</div></div>';";
+  code += "d.appendChild(hdr);";
+  // Toggle Switch
+  code += "function render(){";
+  code += "var on=_ttG();";
+  code += "var sw=document.createElement('div');";
+  code += "sw.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:'+(on?'rgba(16,185,129,0.2)':'rgba(75,85,99,0.3)')+';border:1px solid '+(on?'rgba(16,185,129,0.5)':'rgba(75,85,99,0.5)')+';';";
+  code += "sw.innerHTML='<span style=\"font-weight:500;font-size:13px;\">'+(on?'已启用':'未启用')+'</span><div style=\"width:44px;height:24px;border-radius:12px;background:'+(on?'#10b981':'#4b5563')+';position:relative;transition:background 0.3s ease;cursor:pointer;\"><div style=\"width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:'+(on?'22px':'2px')+';transition:left 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);\"></div></div>';";
   code += "sw.onclick=function(){";
-  code += "if(on){turnOff();}else{turnOn();modAua();updBtn();updPanel();}";
-  code += "};swRow.appendChild(sw);panel.appendChild(swRow);";
+  code += "if(on){_ttD();}else{_ttE();_ttM();render();}";
+  code += "};";
+  code += "d.innerHTML='';";
+  code += "d.appendChild(hdr);";
+  code += "d.appendChild(sw);";
   // Tip
   code += "var tip=document.createElement('div');";
-  code += "tip.style.cssText='padding:12px;border-radius:10px;font-size:12px;line-height:1.6;';";
-  code += "if(on){tip.style.background='rgba(99,102,241,0.1)';tip.style.color='#a5b4fc';tip.innerHTML='<div style=\"font-weight:600;margin-bottom:4px;\">💡 已连接 Lobby 0</div><div>退出当前大厅后重新进入多人游戏即可</div>';}";
-  code += "else{tip.style.background='rgba(251,191,36,0.1)';tip.style.color='#fbbf24';tip.innerHTML='<div style=\"font-weight:600;margin-bottom:4px;\">💡 点击开关启用</div><div>开启后所有连接将重定向到 Lobby 0</div>';}";
-  code += "panel.appendChild(tip);";
+  code += "tip.style.cssText='margin-top:10px;padding:8px;border-radius:8px;font-size:11px;line-height:1.4;background:'+(on?'rgba(16,185,129,0.1)':'rgba(251,191,36,0.1)')+';color:'+(on?'#6ee7b7':'#fbbf24')+';';";
+  code += "tip.textContent=on?'退出大厅后重新进入多人游戏':'点击开启后连接到 Lobby 0';";
+  code += "d.appendChild(tip);";
   code += "}";
-  // Toggle
-  code += "function toggle(){";
-  code += "var hidden=panel.style.visibility==='hidden';";
-  code += "if(hidden){panel.style.opacity='1';panel.style.visibility='visible';panel.style.transform='translateY(0)';btn.style.transform='rotate(90deg)';updPanel();}";
-  code += "else{panel.style.opacity='0';panel.style.visibility='hidden';panel.style.transform='translateY(-10px)';btn.style.transform='rotate(0deg)';}";
-  code += "}";
-  // Events
-  code += "btn.onclick=function(e){e.stopPropagation();toggle();};";
-  code += "document.addEventListener('click',function(e){";
-  code += "if(!btn.contains(e.target)&&!panel.contains(e.target)){";
-  code += "panel.style.opacity='0';panel.style.visibility='hidden';panel.style.transform='translateY(-10px)';btn.style.transform='rotate(0deg)';";
-  code += "}";
-  code += "});";
-  code += "btn.onmouseenter=function(){btn.style.transform='scale(1.1)';};";
-  code += "btn.onmouseleave=function(){btn.style.transform='scale(1)';};";
-  code += "document.body.appendChild(btn);document.body.appendChild(panel);";
-  code += "turnOn();modAua();updBtn();";
-  code += "console.log('[TT] Lobby 0 enabled');";
+  code += "render();";
+  code += "document.body.appendChild(d);";
   code += "})();";
   return code;
 };

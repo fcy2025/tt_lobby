@@ -105,28 +105,34 @@ function App() {
         <div className="glass-panel rounded-2xl p-6 mb-5">
           <div className="text-center mb-5">
             <div className="text-3xl mb-2">📌</div>
-            <h2 className="text-xl font-bold mb-1">快捷书签</h2>
-            <p className="text-gray-400 text-xs">点击按钮复制后添加到书签</p>
+            <h2 className="text-xl font-bold mb-1">快捷入口</h2>
+            <p className="text-gray-400 text-xs">复制代码后在游戏页面地址栏执行</p>
           </div>
 
           <div className="bg-emerald-900/20 rounded-lg p-3 border border-emerald-900/30 mb-4">
             <p className="text-xs text-emerald-300 space-y-1">
-              <b>📱 移动端：</b><br/>
-              1. 点击下方按钮复制代码<br/>
-              2. 在浏览器新建书签<br/>
-              3. 名称填"🏰 Lobby 0"<br/>
-              4. 网址粘贴刚才复制的代码<br/>
-              <b>🖥️ 桌面端：</b><br/>
-              拖拽下方按钮到收藏夹栏
+              <b>📱 移动端操作：</b><br/>
+              1. 点击"复制代码"按钮<br/>
+              2. 点击"打开游戏"按钮<br/>
+              3. 游戏加载后点击地址栏<br/>
+              4. 删除原有内容，粘贴代码并回车<br/>
+              <b>🖥️ 桌面端操作：</b><br/>
+              拖拽下方按钮到浏览器收藏夹栏
             </p>
           </div>
 
           <button onClick={() => copy(bookmarkUrl)}
-            className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-emerald-500/30 mb-4">
-            <span className="text-2xl">🏰</span>
-            <span className="font-bold text-lg">Lobby 0</span>
-            {copied && <span className="text-xs text-white/90">已复制，去添加书签</span>}
+            className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-emerald-500/30 mb-3">
+            <span className="text-2xl">📋</span>
+            <span className="font-bold text-lg">复制代码</span>
+            {copied && <span className="text-xs text-white/90">已复制！</span>}
           </button>
+
+          <a href="https://territorial.io/" target="_blank" rel="noopener noreferrer"
+            className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-blue-500/30 mb-4">
+            <span className="text-2xl">🎮</span>
+            <span className="font-bold text-lg">打开游戏</span>
+          </a>
 
           <div className="bg-amber-900/20 rounded-lg p-3 border border-amber-900/30">
             <p className="text-xs text-amber-300 mb-2">⭐ 油猴脚本（推荐方案）</p>
@@ -145,23 +151,15 @@ function App() {
           <div className="space-y-3 text-sm text-gray-400">
             <div className="flex items-start gap-3">
               <span className="text-emerald-400 font-bold">📱</span>
-              <span><b>移动端添加书签：</b><br/>1. 点击按钮复制代码<br/>2. 浏览器 → 菜单 → 添加书签<br/>3. 名称填"🏰 Lobby 0"<br/>4. 网址粘贴刚才复制的代码</span>
+              <span><b>移动端：</b><br/>1. 点击"复制代码"按钮<br/>2. 点击"打开游戏"按钮<br/>3. 游戏加载后点击地址栏<br/>4. 删除网址，粘贴代码并回车</span>
             </div>
             <div className="flex items-start gap-3">
               <span className="text-emerald-400 font-bold">🖥️</span>
-              <span><b>桌面端添加书签：</b><br/>直接拖拽按钮到浏览器收藏夹栏</span>
+              <span><b>桌面端：</b><br/>1. 拖拽按钮到收藏夹栏<br/>2. 打开游戏后点击书签即可</span>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-emerald-400 font-bold">1</span>
-              <span>打开 territorial.io 等待游戏加载</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="text-emerald-400 font-bold">2</span>
-              <span>点击书签，右上角弹出控制面板</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="text-emerald-400 font-bold">3</span>
-              <span>启用后退出大厅重新进入多人游戏</span>
+              <span className="text-emerald-400 font-bold">⭐</span>
+              <span><b>通用步骤：</b><br/>1. 启用工具后退出当前大厅<br/>2. 重新点击"多人游戏"<br/>3. 自动连接到 Lobby 0</span>
             </div>
           </div>
         </div>

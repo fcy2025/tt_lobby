@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TT Lobby 0
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      7.0
+// @version      8.0
 // @description  快捷连接到 Territorial.io Lobby 0
 // @author       fcy20
 // @match        https://territorial.io/*
@@ -96,97 +96,126 @@
   var t = setInterval(function() { if (modAua()) hookDi(); }, 500);
   setTimeout(function() { clearInterval(t); }, 30000);
 
-  function createPanel() {
-    var old = document.getElementById('tt-panel');
-    if (old) old.remove();
-    var oldShow = document.getElementById('tt-show');
-    if (oldShow) oldShow.remove();
+  function createUI() {
+    var oldBtn = document.getElementById('tt-toggle-btn');
+    if (oldBtn) oldBtn.remove();
+    var oldPanel = document.getElementById('tt-panel');
+    if (oldPanel) oldPanel.remove();
 
-    var d = document.createElement('div');
-    d.id = 'tt-panel';
-    d.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;background:rgba(30,41,59,0.95);backdrop-filter:blur(10px);color:#fff;padding:16px;border-radius:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.6);border:1px solid rgba(99,102,241,0.4);min-width:200px;transition:all 0.3s ease;';
+    var btn = document.createElement('div');
+    btn.id = 'tt-toggle-btn';
+    btn.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;width:44px;height:44px;border-radius:50%;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);border:1px solid rgba(99,102,241,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:all 0.3s ease;';
+    btn.title = 'Lobby 0 工具';
 
-    var hdr = document.createElement('div');
-    hdr.style.cssText = 'display:flex;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(51,65,85,0.6);';
+    var panel = document.createElement('div');
+    panel.id = 'tt-panel';
+    panel.style.cssText = 'position:fixed;top:70px;right:20px;z-index:99998;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:20px;border-radius:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.6);border:1px solid rgba(99,102,241,0.4);min-width:240px;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.3s ease;';
 
-    var hide = document.createElement('span');
-    hide.style.cssText = 'margin-left:auto;cursor:pointer;color:#94a3b8;font-size:14px;padding:4px;transition:color 0.2s;';
-    hide.textContent = '◀';
-    hide.title = '隐藏面板';
-    hide.onmouseenter = function() { hide.style.color = '#fff'; };
-    hide.onmouseleave = function() { hide.style.color = '#94a3b8'; };
-
-    var btn = document.createElement('button');
-    btn.style.cssText = 'width:100%;padding:10px;border:none;border-radius:10px;color:#fff;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;';
-
-    var tip = document.createElement('div');
-    tip.style.cssText = 'margin-top:12px;padding:10px;border-radius:8px;font-size:11px;line-height:1.5;';
-
-    function render() {
+    function updateBtn() {
       var on = isOn();
-      hdr.innerHTML = '<span style="font-size:20px;margin-right:8px;">🏰</span><div><div style="font-weight:600;font-size:14px;">Lobby 0 工具</div><div style="font-size:11px;color:#94a3b8;">' + (on ? '已启用' : '已关闭') + '</div></div>';
-      hdr.appendChild(hide);
+      btn.textContent = on ? '🟢' : '⚪';
+      btn.style.borderColor = on ? 'rgba(16,185,129,0.6)' : 'rgba(99,102,241,0.4)';
+      btn.style.boxShadow = on ? '0 4px 20px rgba(16,185,129,0.4)' : '0 4px 20px rgba(0,0,0,0.5)';
+    }
 
-      if (on) {
-        btn.textContent = '关闭工具';
-        btn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
-        btn.style.boxShadow = '0 4px 12px rgba(239,68,68,0.3)';
-        btn.onmouseenter = function() { btn.style.transform = 'scale(1.02)'; btn.style.boxShadow = '0 6px 16px rgba(239,68,68,0.4)'; };
-        btn.onmouseleave = function() { btn.style.transform = 'scale(1)'; btn.style.boxShadow = '0 4px 12px rgba(239,68,68,0.3)'; };
-        btn.onclick = turnOff;
-
-        tip.style.background = 'rgba(99,102,241,0.1)';
-        tip.style.color = '#a5b4fc';
-        tip.innerHTML = '<div style="font-weight:600;margin-bottom:4px;">💡 使用提示</div><div>退出大厅后重新进入多人游戏</div><div>隐藏面板后点击箭头显示</div>';
+    function togglePanel() {
+      var hidden = panel.style.visibility === 'hidden';
+      if (hidden) {
+        panel.style.opacity = '1';
+        panel.style.visibility = 'visible';
+        panel.style.transform = 'translateY(0)';
+        btn.style.transform = 'rotate(90deg)';
       } else {
-        btn.textContent = '开启工具';
-        btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
-        btn.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)';
-        btn.onmouseenter = function() { btn.style.transform = 'scale(1.02)'; btn.style.boxShadow = '0 6px 16px rgba(16,185,129,0.4)'; };
-        btn.onmouseleave = function() { btn.style.transform = 'scale(1)'; btn.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)'; };
-        btn.onclick = function() { turnOn(); modAua(); render(); };
-
-        tip.style.background = 'rgba(251,191,36,0.1)';
-        tip.style.color = '#fbbf24';
-        tip.innerHTML = '<div style="font-weight:600;margin-bottom:4px;">💡 使用提示</div><div>点击开启后，连接将重定向到 Lobby 0</div><div>退出大厅后重新进入即可</div>';
+        panel.style.opacity = '0';
+        panel.style.visibility = 'hidden';
+        panel.style.transform = 'translateY(-10px)';
+        btn.style.transform = 'rotate(0deg)';
       }
     }
 
-    render();
-    d.appendChild(hdr);
-    d.appendChild(btn);
-    d.appendChild(tip);
-    document.body.appendChild(d);
+    function updatePanel() {
+      var on = isOn();
+      panel.innerHTML = '';
 
-    var show = document.createElement('div');
-    show.id = 'tt-show';
-    show.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99998;width:40px;height:40px;border-radius:12px;background:rgba(30,41,59,0.9);backdrop-filter:blur(10px);border:1px solid rgba(99,102,241,0.4);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:all 0.2s;';
-    show.textContent = '▶';
-    show.onmouseenter = function() { show.style.transform = 'scale(1.1)'; };
-    show.onmouseleave = function() { show.style.transform = 'scale(1)'; };
-    show.onclick = function() {
-      show.style.display = 'none';
-      d.style.transform = 'translateX(0)';
-      d.style.opacity = '1';
-      d.style.padding = '16px';
-      d.style.minWidth = '200px';
-    };
-    document.body.appendChild(show);
+      var hdr = document.createElement('div');
+      hdr.style.cssText = 'display:flex;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(51,65,85,0.6);';
+      hdr.innerHTML = '<span style="font-size:24px;margin-right:10px;">🏰</span><div><div style="font-weight:600;font-size:15px;">Lobby 0</div><div style="font-size:11px;color:#94a3b8;">' + (on ? '已启用' : '已关闭') + '</div></div>';
+      panel.appendChild(hdr);
 
-    hide.onclick = function() {
-      d.style.transform = 'translateX(calc(100% - 40px))';
-      d.style.opacity = '0.3';
-      d.style.padding = '16px 8px';
-      d.style.minWidth = '40px';
-      show.style.display = 'flex';
+      var switchRow = document.createElement('div');
+      switchRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:12px;background:rgba(255,255,255,0.05);border-radius:12px;';
+
+      var label = document.createElement('span');
+      label.style.cssText = 'font-weight:500;font-size:14px;';
+      label.textContent = '启用 Lobby 0';
+      switchRow.appendChild(label);
+
+      var sw = document.createElement('button');
+      sw.style.cssText = 'width:48px;height:28px;border-radius:14px;border:none;cursor:pointer;transition:all 0.3s ease;position:relative;';
+      sw.style.background = on ? '#10b981' : '#334155';
+
+      var knob = document.createElement('div');
+      knob.style.cssText = 'position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:2px;transition:all 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);';
+      knob.style.left = on ? '22px' : '2px';
+      sw.appendChild(knob);
+
+      sw.onclick = function() {
+        if (on) {
+          turnOff();
+        } else {
+          turnOn();
+          modAua();
+          updateBtn();
+          updatePanel();
+        }
+      };
+      switchRow.appendChild(sw);
+      panel.appendChild(switchRow);
+
+      var tip = document.createElement('div');
+      tip.style.cssText = 'padding:12px;border-radius:10px;font-size:12px;line-height:1.6;';
+      if (on) {
+        tip.style.background = 'rgba(99,102,241,0.1)';
+        tip.style.color = '#a5b4fc';
+        tip.innerHTML = '<div style="font-weight:600;margin-bottom:4px;">💡 已连接 Lobby 0</div><div>退出当前大厅后重新进入多人游戏即可</div>';
+      } else {
+        tip.style.background = 'rgba(251,191,36,0.1)';
+        tip.style.color = '#fbbf24';
+        tip.innerHTML = '<div style="font-weight:600;margin-bottom:4px;">💡 点击开关启用</div><div>开启后所有连接将重定向到 Lobby 0</div>';
+      }
+      panel.appendChild(tip);
+    }
+
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      togglePanel();
+      if (panel.style.visibility === 'visible') {
+        updatePanel();
+      }
     };
+
+    document.addEventListener('click', function(e) {
+      if (!btn.contains(e.target) && !panel.contains(e.target)) {
+        panel.style.opacity = '0';
+        panel.style.visibility = 'hidden';
+        panel.style.transform = 'translateY(-10px)';
+        btn.style.transform = 'rotate(0deg)';
+      }
+    });
+
+    btn.onmouseenter = function() { btn.style.transform = 'scale(1.1)'; };
+    btn.onmouseleave = function() { btn.style.transform = 'scale(1)'; };
+
+    document.body.appendChild(btn);
+    document.body.appendChild(panel);
+    updateBtn();
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', createPanel);
+    document.addEventListener('DOMContentLoaded', createUI);
   } else {
-    createPanel();
+    createUI();
   }
 
-  console.log('[TT] Lobby 0 Tool v7.0, enabled=' + isOn());
+  console.log('[TT] Lobby 0 Tool v8.0, enabled=' + isOn());
 })();

@@ -5,133 +5,97 @@ const getBookmarkCode = (): string => {
   code += "var ok=location.hostname.indexOf('territorial.io')>-1||location.hostname.indexOf('fxclient')>-1;";
   code += "if(!ok){alert('请先打开游戏页面');return;}";
   code += "var L0='territorial.io';";
-  code += "function _ttG(){try{return localStorage.getItem('tt_lobby_enabled')==='1';}catch(e){return false;}}";
-  code += "function _ttT(){return L0;}";
-  // Toggle
-  code += "var enabled=_ttG();";
-  code += "if(enabled){";
-  code += "localStorage.removeItem('tt_lobby_enabled');";
-  code += "localStorage.removeItem('tt_lobby_id');";
-  code += "localStorage.removeItem('tt_lobby_host');";
-  code += "if(window._ttHook){";
-  code += "window._ttHook=0;";
-  code += "if(window.WebSocket&&window._ttOrigWS){";
-  code += "window.WebSocket=window._ttOrigWS;";
-  code += "}";
-  code += "}";
-  code += "location.reload();";
-  code += "return;";
-  code += "}";
-  // Enable
-  code += "localStorage.setItem('tt_lobby_enabled','1');";
-  code += "localStorage.setItem('tt_lobby_id','0');";
-  code += "localStorage.setItem('tt_lobby_host',L0);";
-  // Strategy 1: Hook WebSocket
+  code += "function isOn(){try{return localStorage.getItem('tt_lobby_enabled')==='1';}catch(e){return false;}}";
+  code += "function turnOn(){localStorage.setItem('tt_lobby_enabled','1');localStorage.setItem('tt_lobby_id','0');localStorage.setItem('tt_lobby_host',L0);}";
+  code += "function turnOff(){localStorage.removeItem('tt_lobby_enabled');localStorage.removeItem('tt_lobby_id');localStorage.removeItem('tt_lobby_host');location.reload();}";
+  // WebSocket Hook
   code += "if(!window._ttHook){";
-  code += "window._ttHook=1;";
-  code += "window._ttOrigWS=window.WebSocket;";
-  code += "var O=window.WebSocket;";
+  code += "window._ttHook=1;window._ttOrigWS=window.WebSocket;var O=window.WebSocket;";
   code += "window.WebSocket=function(u,p){";
-  code += "var M=u;";
+  code += "var M=u;if(!isOn()){return p?new O(u,p):new O(u);}";
   code += "try{";
-  code += "var pu=new URL(u);";
-  code += "var ph=pu.hostname;";
-  code += "var pp=pu.pathname;";
+  code += "var pu=new URL(u);var ph=pu.hostname;var pp=pu.pathname;";
   code += "var tt=ph==='territorial.io'||ph==='1.territorial.io'||ph==='2.territorial.io'||ph==='game.territorial.io';";
   code += "if(tt){";
-  code += "var th=L0;";
-  code += "if(pp.length===5&&pp.charAt(0)==='/'&&pp.charAt(1)==='x'&&pp.charAt(2)==='0'){";
-  code += "pu.pathname='/x00/';";
-  code += "if(ph!=='game.territorial.io'){pu.hostname=th;}";
-  code += "M=pu.toString();";
-  code += "console.log('[TT] WS x00->',M);";
-  code += "}else if(pp==='/s50/'||pp==='/s51/'||pp==='/s52/'){";
-  code += "pu.hostname=th;";
-  code += "M=pu.toString();";
-  code += "console.log('[TT] WS s->',M);";
+  code += "if(pp.length===5&&pp.charAt(0)==='/'&&pp.charAt(1)==='x'&&pp.charAt(2)==='0'){pu.pathname='/x00/';if(ph!=='game.territorial.io')pu.hostname=L0;M=pu.toString();}";
+  code += "else if(pp==='/s50/'||pp==='/s51/'||pp==='/s52/'){pu.hostname=L0;M=pu.toString();}";
   code += "}";
-  code += "}";
-  code += "}catch(e){}";
-  code += "return p?new O(M,p):new O(M);";
+  code += "}catch(e){}return p?new O(M,p):new O(M);";
   code += "};";
-  code += "window.WebSocket.prototype=O.prototype;";
-  code += "window.WebSocket.prototype.constructor=window.WebSocket;";
+  code += "window.WebSocket.prototype=O.prototype;window.WebSocket.prototype.constructor=window.WebSocket;";
   code += "window.WebSocket.toString=function(){return O.toString();};";
   code += "window.WebSocket.CONNECTING=0;window.WebSocket.OPEN=1;window.WebSocket.CLOSING=2;window.WebSocket.CLOSED=3;";
   code += "}";
-  // Strategy 2: Modify b1.z.aUa
-  code += "function _ttM(){";
-  code += "if(window.b1&&window.b1.z&&window.b1.z.aUa){";
-  code += "for(var i=0;i<window.b1.z.aUa.length;i++){window.b1.z.aUa[i]=L0;}";
-  code += "console.log('[TT] aUa modified to',L0);";
-  code += "return true;";
-  code += "}";
+  // Modify aUa
+  code += "function modAua(){";
+  code += "if(!isOn())return false;";
+  code += "if(window.b1&&window.b1.z&&window.b1.z.aUa){for(var i=0;i<window.b1.z.aUa.length;i++)window.b1.z.aUa[i]=L0;return true;}";
   code += "return false;";
   code += "}";
-  code += "_ttM();";
-  // Poll for b1
-  code += "var b1T=setInterval(function(){";
-  code += "if(_ttM()){clearInterval(b1T);}";
-  code += "},300);";
+  code += "modAua();";
+  code += "var b1T=setInterval(function(){if(modAua())clearInterval(b1T);},300);";
   code += "setTimeout(function(){clearInterval(b1T);},10000);";
-  // UI Panel
-  code += "var old=document.getElementById('tt-panel');";
-  code += "if(old)old.remove();";
-  code += "var d=document.createElement('div');";
-  code += "d.id='tt-panel';";
-  code += "d.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;background:rgba(30,41,59,0.95);backdrop-filter:blur(10px);color:#fff;padding:16px;border-radius:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.6);border:1px solid rgba(99,102,241,0.4);min-width:200px;transition:all 0.3s ease;';";
+  // UI - Mini Button
+  code += "var oldBtn=document.getElementById('tt-toggle-btn');if(oldBtn)oldBtn.remove();";
+  code += "var oldPanel=document.getElementById('tt-panel');if(oldPanel)oldPanel.remove();";
+  code += "var btn=document.createElement('div');btn.id='tt-toggle-btn';";
+  code += "btn.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;width:44px;height:44px;border-radius:50%;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);border:1px solid rgba(99,102,241,0.4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:all 0.3s ease;';";
+  code += "btn.title='Lobby 0';";
+  // Panel
+  code += "var panel=document.createElement('div');panel.id='tt-panel';";
+  code += "panel.style.cssText='position:fixed;top:70px;right:20px;z-index:99998;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:20px;border-radius:16px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.6);border:1px solid rgba(99,102,241,0.4);min-width:240px;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.3s ease;';";
+  // Update Button
+  code += "function updBtn(){";
+  code += "var on=isOn();";
+  code += "btn.textContent=on?'🟢':'⚪';";
+  code += "btn.style.borderColor=on?'rgba(16,185,129,0.6)':'rgba(99,102,241,0.4)';";
+  code += "btn.style.boxShadow=on?'0 4px 20px rgba(16,185,129,0.4)':'0 4px 20px rgba(0,0,0,0.5)';";
+  code += "}";
+  // Update Panel
+  code += "function updPanel(){";
+  code += "var on=isOn();panel.innerHTML='';";
+  // Header
   code += "var hdr=document.createElement('div');";
-  code += "hdr.style.cssText='display:flex;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(51,65,85,0.6);';";
-  code += "hdr.innerHTML='<span style=\"font-size:20px;margin-right:8px;\">🏰</span><div><div style=\"font-weight:600;font-size:14px;\">Lobby 0 工具</div><div style=\"font-size:11px;color:#94a3b8;\">已启用</div></div>';";
-  code += "var hide=document.createElement('span');";
-  code += "hide.style.cssText='margin-left:auto;cursor:pointer;color:#94a3b8;font-size:14px;padding:4px;transition:color 0.2s;';";
-  code += "hide.textContent='◀';";
-  code += "hide.title='隐藏面板';";
-  code += "hide.onmouseenter=function(){hide.style.color='#fff';};";
-  code += "hide.onmouseleave=function(){hide.style.color='#94a3b8';};";
-  code += "hide.onclick=function(){";
-  code += "d.style.transform='translateX(calc(100% - 40px))';";
-  code += "d.style.opacity='0.3';";
-  code += "d.style.padding='16px 8px';";
-  code += "d.style.minWidth='40px';";
-  code += "show.style.display='block';";
-  code += "};";
-  code += "hdr.appendChild(hide);";
-  code += "d.appendChild(hdr);";
-  // Toggle Button
-  code += "var btn=document.createElement('button');";
-  code += "btn.textContent='关闭工具';";
-  code += "btn.style.cssText='width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 12px rgba(239,68,68,0.3);';";
-  code += "btn.onmouseenter=function(){btn.style.transform='scale(1.02)';btn.style.boxShadow='0 6px 16px rgba(239,68,68,0.4);';};";
-  code += "btn.onmouseleave=function(){btn.style.transform='scale(1)';btn.style.boxShadow='0 4px 12px rgba(239,68,68,0.3);';};";
-  code += "btn.onclick=function(){";
-  code += "localStorage.removeItem('tt_lobby_enabled');";
-  code += "localStorage.removeItem('tt_lobby_id');";
-  code += "localStorage.removeItem('tt_lobby_host');";
-  code += "location.reload();";
-  code += "};";
-  code += "d.appendChild(btn);";
+  code += "hdr.style.cssText='display:flex;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(51,65,85,0.6);';";
+  code += "hdr.innerHTML='<span style=\"font-size:24px;margin-right:10px;\">🏰</span><div><div style=\"font-weight:600;font-size:15px;\">Lobby 0</div><div style=\"font-size:11px;color:#94a3b8;\">'+(on?'已启用':'已关闭')+'</div></div>';";
+  code += "panel.appendChild(hdr);";
+  // Switch
+  code += "var swRow=document.createElement('div');";
+  code += "swRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:12px;background:rgba(255,255,255,0.05);border-radius:12px;';";
+  code += "var lbl=document.createElement('span');lbl.style.cssText='font-weight:500;font-size:14px;';lbl.textContent='启用 Lobby 0';swRow.appendChild(lbl);";
+  code += "var sw=document.createElement('button');";
+  code += "sw.style.cssText='width:48px;height:28px;border-radius:14px;border:none;cursor:pointer;transition:all 0.3s ease;position:relative;';";
+  code += "sw.style.background=on?'#10b981':'#334155';";
+  code += "var knob=document.createElement('div');";
+  code += "knob.style.cssText='position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:2px;transition:all 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);';";
+  code += "knob.style.left=on?'22px':'2px';sw.appendChild(knob);";
+  code += "sw.onclick=function(){";
+  code += "if(on){turnOff();}else{turnOn();modAua();updBtn();updPanel();}";
+  code += "};swRow.appendChild(sw);panel.appendChild(swRow);";
   // Tip
   code += "var tip=document.createElement('div');";
-  code += "tip.style.cssText='margin-top:12px;padding:10px;background:rgba(99,102,241,0.1);border-radius:8px;font-size:11px;color:#a5b4fc;line-height:1.5;';";
-  code += "tip.innerHTML='<div style=\"font-weight:600;margin-bottom:4px;\">💡 使用提示</div><div>退出当前大厅后重新进入多人游戏即可连接到 Lobby 0</div><div>隐藏面板后点击右侧箭头显示</div>';";
-  code += "d.appendChild(tip);";
-  code += "document.body.appendChild(d);";
-  // Show button
-  code += "var show=document.createElement('div');";
-  code += "show.id='tt-show';";
-  code += "show.style.cssText='position:fixed;top:20px;right:20px;z-index:99998;width:40px;height:40px;border-radius:12px;background:rgba(30,41,59,0.9);backdrop-filter:blur(10px);border:1px solid rgba(99,102,241,0.4);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:all 0.2s;';";
-  code += "show.textContent='▶';";
-  code += "show.onmouseenter=function(){show.style.transform='scale(1.1)';};";
-  code += "show.onmouseleave=function(){show.style.transform='scale(1)';};";
-  code += "show.onclick=function(){";
-  code += "show.style.display='none';";
-  code += "d.style.transform='translateX(0)';";
-  code += "d.style.opacity='1';";
-  code += "d.style.padding='16px';";
-  code += "d.style.minWidth='200px';";
-  code += "};";
-  code += "document.body.appendChild(show);";
+  code += "tip.style.cssText='padding:12px;border-radius:10px;font-size:12px;line-height:1.6;';";
+  code += "if(on){tip.style.background='rgba(99,102,241,0.1)';tip.style.color='#a5b4fc';tip.innerHTML='<div style=\"font-weight:600;margin-bottom:4px;\">💡 已连接 Lobby 0</div><div>退出当前大厅后重新进入多人游戏即可</div>';}";
+  code += "else{tip.style.background='rgba(251,191,36,0.1)';tip.style.color='#fbbf24';tip.innerHTML='<div style=\"font-weight:600;margin-bottom:4px;\">💡 点击开关启用</div><div>开启后所有连接将重定向到 Lobby 0</div>';}";
+  code += "panel.appendChild(tip);";
+  code += "}";
+  // Toggle
+  code += "function toggle(){";
+  code += "var hidden=panel.style.visibility==='hidden';";
+  code += "if(hidden){panel.style.opacity='1';panel.style.visibility='visible';panel.style.transform='translateY(0)';btn.style.transform='rotate(90deg)';updPanel();}";
+  code += "else{panel.style.opacity='0';panel.style.visibility='hidden';panel.style.transform='translateY(-10px)';btn.style.transform='rotate(0deg)';}";
+  code += "}";
+  // Events
+  code += "btn.onclick=function(e){e.stopPropagation();toggle();};";
+  code += "document.addEventListener('click',function(e){";
+  code += "if(!btn.contains(e.target)&&!panel.contains(e.target)){";
+  code += "panel.style.opacity='0';panel.style.visibility='hidden';panel.style.transform='translateY(-10px)';btn.style.transform='rotate(0deg)';";
+  code += "}";
+  code += "});";
+  code += "btn.onmouseenter=function(){btn.style.transform='scale(1.1)';};";
+  code += "btn.onmouseleave=function(){btn.style.transform='scale(1)';};";
+  code += "document.body.appendChild(btn);document.body.appendChild(panel);";
+  code += "turnOn();modAua();updBtn();";
   code += "console.log('[TT] Lobby 0 enabled');";
   code += "})();";
   return code;

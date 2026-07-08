@@ -48,7 +48,14 @@
       localStorage.setItem('tt_lobby_id', currentLobby.toString());
       console.log('[TT Lobby] Lobby switched to:', currentLobby);
       for (let i = activeConns.length - 1; i >= 0; i--) {
-        try { activeConns[i].close(); } catch(e) {}
+        try {
+          const w = activeConns[i];
+          if (w.readyState === 1) {
+            w.close();
+          } else if (w.readyState === 0) {
+            w.onopen = function() { try { this.close(); } catch(e) {} };
+          }
+        } catch(e) {}
       }
       activeConns.length = 0;
     }

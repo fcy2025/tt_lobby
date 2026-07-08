@@ -17,7 +17,13 @@ function App() {
       if(!window._ttConns){window._ttConns=[]}
       var O=window._ttOrigWS;
       var conns=window._ttConns;
-      try{for(var i=0;i<conns.length;i++){try{conns[i].close()}catch(e){}}}catch(e){}
+      for(var i=conns.length-1;i>=0;i--){
+        try{
+          var w=conns[i];
+          if(w.readyState===1){w.close();}
+          else if(w.readyState===0){w.onopen=function(){try{this.close()}catch(e){}};}
+        }catch(e){}
+      }
       conns.length=0;
       var N=function(u,p){
         var M=u;

@@ -83,16 +83,9 @@ const getBookmarkCode = (): string => {
 };
 
 function App() {
-  const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'bookmark' | 'tampermonkey'>('bookmark');
 
   const bookmarkUrl = getBookmarkCode();
-
-  const copy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const installUserscript = () => {
     const base = (typeof import.meta !== 'undefined' && (import.meta as any).env?.BASE_URL) || '/';

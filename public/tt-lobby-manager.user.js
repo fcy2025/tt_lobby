@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TT Lobby 0
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      7.6
+// @version      7.7
 // @description  快捷连接到 Territorial.io Lobby 0
 // @author       fcy20
 // @match        https://territorial.io/*
@@ -13,22 +13,18 @@
 
 (function() {
   var L0 = 'territorial.io';
-  var PHI = 1.618;
   var W = 180;
-  var H1 = Math.round(W * PHI);
+  var H1 = Math.round(W * 1.618);
   var H2 = Math.round(H1 * 0.618);
-  var GAP = 8;
   var TAB_W = 36;
 
-  function isOn() {
-    try { return localStorage.getItem('tt_lobby_enabled') === '1'; }
-    catch(e) { return false; }
-  }
+  function isOn() { try { return localStorage.getItem('tt_lobby_enabled') === '1'; } catch(e) { return false; } }
 
   function turnOn() {
     localStorage.setItem('tt_lobby_enabled', '1');
     localStorage.setItem('tt_lobby_id', '0');
     localStorage.setItem('tt_lobby_host', L0);
+    location.reload();
   }
 
   function turnOff() {
@@ -37,9 +33,9 @@
     localStorage.removeItem('tt_lobby_host');
     if (window._ttOrigWS) window.WebSocket = window._ttOrigWS;
     window._ttHook = 0;
+    location.reload();
   }
 
-  // === WebSocket Hook (runs immediately at document-start) ===
   if (!window._ttHook) {
     window._ttHook = 1;
     window._ttOrigWS = window.WebSocket;
@@ -47,9 +43,7 @@
 
     window.WebSocket = function(url, protocols) {
       var M = url;
-      if (!isOn()) {
-        return protocols ? new O(url, protocols) : new O(url);
-      }
+      if (!isOn()) return protocols ? new O(url, protocols) : new O(url);
       try {
         var pu = new URL(url);
         var ph = pu.hostname;
@@ -78,61 +72,17 @@
     window.WebSocket.CLOSED = 3;
   }
 
-  // === b1.z.aUa modification ===
-  function modAua() {
-    if (!isOn()) return false;
-    if (window.b1 && window.b1.z && window.b1.z.aUa) {
-      for (var i = 0; i < window.b1.z.aUa.length; i++) window.b1.z.aUa[i] = L0;
-      return true;
-    }
-    return false;
-  }
-
-  function hookDi() {
-    if (!isOn() || !window.b1 || !window.b1.z || !window.b1.z.di || window.b1.z._ttDiHooked) return;
-    window.b1.z._ttDiHooked = 1;
-    var orig = window.b1.z.di;
-    window.b1.z.di = function() {
-      var r = orig.apply(this, arguments);
-      if (this.aUa && isOn()) for (var i = 0; i < this.aUa.length; i++) this.aUa[i] = L0;
-      return r;
-    };
-  }
-
-  var auaTimer = setInterval(function() { if (modAua()) hookDi(); }, 500);
-  setTimeout(function() { clearInterval(auaTimer); }, 30000);
-
-  // === Force disconnect and reset ===
-  function forceReset() {
-    if (window.b1 && window.b1.z) {
-      try { if (typeof window.b1.z.sJ === 'function') window.b1.z.sJ(); } catch(e) {}
-      try { if (typeof window.b1.z.di === 'function') window.b1.z.di(); } catch(e) {}
-    }
-    try {
-      if (typeof window.b1 === 'object') {
-        for (var k in window.b1) {
-          var v = window.b1[k];
-          if (v && v.readyState !== undefined && v.readyState === 1) { try { v.close(); } catch(e) {} }
-        }
-      }
-    } catch(e) {}
-  }
-  setInterval(function() { if (isOn()) modAua(); }, 1000);
-
-  // === UI Panel (waits for body) ===
   function createPanel() {
     var ow = document.getElementById('tt-wrap');
     if (ow) ow.remove();
 
-    // Wrapper
     var wrap = document.createElement('div');
     wrap.id = 'tt-wrap';
     wrap.style.cssText = 'position:fixed;top:20px;right:0;z-index:99999;transition:transform 0.3s ease;';
 
-    // Panel 1 - Lobby 0 controls
     var d = document.createElement('div');
     d.id = 'tt-panel';
-    d.style.cssText = 'width:' + W + 'px;height:' + H1 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px 0 0 14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;margin-right:' + GAP + 'px;';
+    d.style.cssText = 'width:' + W + 'px;height:' + H1 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px 0 0 14px;font-family:sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;margin-right:8px;';
 
     var hdr = document.createElement('div');
     hdr.style.cssText = 'display:flex;align-items:center;margin-bottom:12px;';
@@ -141,12 +91,9 @@
     function render() {
       var on = isOn();
       var sw = document.createElement('div');
-      sw.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:' + (on ? 'rgba(16,185,129,0.2)' : 'rgba(75,85,99,0.3)') + ';border:1px solid ' + (on ? 'rgba(16,185,129,0.5)' : 'rgba(75,85,99,0.5)') + ';cursor:pointer;transition:all 0.2s;';
-      sw.innerHTML = '<span style="font-weight:500;font-size:13px;">' + (on ? '已启用' : '未启用') + '</span><div style="width:44px;height:24px;border-radius:12px;background:' + (on ? '#10b981' : '#4b5563') + ';position:relative;transition:background 0.3s ease;"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (on ? '22px' : '2px') + ';transition:left 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div></div>';
-      sw.onclick = function() {
-        if (on) turnOff(); else { turnOn(); modAua(); forceReset(); }
-        render();
-      };
+      sw.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:' + (on ? 'rgba(16,185,129,0.2)' : 'rgba(75,85,99,0.3)') + ';border:1px solid ' + (on ? 'rgba(16,185,129,0.5)' : 'rgba(75,85,99,0.5)') + ';cursor:pointer;';
+      sw.innerHTML = '<span style="font-weight:500;font-size:13px;">' + (on ? '已启用' : '未启用') + '</span><div style="width:44px;height:24px;border-radius:12px;background:' + (on ? '#10b981' : '#4b5563') + ';position:relative;"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (on ? '22px' : '2px') + ';transition:left 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div></div>';
+      sw.onclick = function() { if (on) turnOff(); else turnOn(); };
 
       d.innerHTML = '';
       d.appendChild(hdr);
@@ -154,25 +101,23 @@
 
       var tip = document.createElement('div');
       tip.style.cssText = 'margin-top:10px;padding:8px;border-radius:8px;font-size:11px;line-height:1.4;background:' + (on ? 'rgba(16,185,129,0.1)' : 'rgba(251,191,36,0.1)') + ';color:' + (on ? '#6ee7b7' : '#fbbf24') + ';';
-      tip.textContent = on ? '退出大厅后重新进入多人游戏' : '点击开启后连接到 Lobby 0';
+      tip.textContent = on ? '页面已刷新，点击多人游戏进入 Lobby 0' : '点击开启后页面将刷新';
       d.appendChild(tip);
     }
 
     render();
     wrap.appendChild(d);
 
-    // Panel 2 - expand/collapse control
     var d2 = document.createElement('div');
     d2.id = 'tt-panel2';
-    d2.style.cssText = 'width:' + W + 'px;height:' + H2 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;border-radius:14px 0 0 14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;display:flex;';
+    d2.style.cssText = 'width:' + W + 'px;height:' + H2 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;border-radius:14px 0 0 14px;font-family:sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;display:flex;';
 
-    // Tab
     var tab = document.createElement('div');
     tab.style.cssText = 'width:' + TAB_W + 'px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:rgba(99,102,241,0.2);border-right:1px solid rgba(99,102,241,0.4);transition:background 0.2s;flex-shrink:0;';
 
     var arrow = document.createElement('span');
     arrow.textContent = '▶';
-    arrow.style.cssText = 'font-size:12px;color:#a5b4fc;transition:transform 0.3s ease;';
+    arrow.style.cssText = 'font-size:12px;color:#a5b4fc;';
 
     var lbl = document.createElement('span');
     lbl.textContent = '收起';
@@ -184,7 +129,6 @@
     tab.onmouseleave = function() { tab.style.background = 'rgba(99,102,241,0.2)'; };
     d2.appendChild(tab);
 
-    // Info
     var info = document.createElement('div');
     info.style.cssText = 'flex:1;padding:12px;overflow-y:auto;';
     info.innerHTML = '<div style="font-weight:600;font-size:12px;margin-bottom:8px;color:#a5b4fc;">🏰 TT Lobby 0</div><div style="font-size:10px;color:#94a3b8;line-height:1.6;margin-bottom:8px;">点击左侧标签可收起/展开面板</div><div style="font-size:10px;color:#94a3b8;line-height:1.6;">🌐 territorial.io<br/>🌐 fxclient.github.io</div>';
@@ -193,7 +137,6 @@
     wrap.appendChild(d2);
     document.body.appendChild(wrap);
 
-    // Toggle
     var uiVisible = true;
     tab.onclick = function() {
       uiVisible = !uiVisible;
@@ -209,13 +152,9 @@
     };
   }
 
-  // Robust wait for body
   function tryCreate() {
-    if (document.body) {
-      createPanel();
-    } else {
-      setTimeout(tryCreate, 100);
-    }
+    if (document.body) createPanel();
+    else setTimeout(tryCreate, 100);
   }
 
   if (document.readyState === 'loading') {
@@ -223,8 +162,5 @@
   } else {
     tryCreate();
   }
-  // Fallback
   setTimeout(tryCreate, 2000);
-
-  console.log('[TT] Lobby 0 Tool v7.4 loaded, enabled=' + isOn());
 })();

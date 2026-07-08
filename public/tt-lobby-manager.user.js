@@ -1,293 +1,186 @@
 // ==UserScript==
 // @name         TT Lobby Manager
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      1.0.0
-// @description  自动管理Territorial.io大厅切换，提供浮动选择器
+// @version      2.0
+// @description  自动管理Territorial.io大厅切换，提供浮动按钮快速切换
 // @author       fcy20
 // @match        https://territorial.io/*
 // @match        https://fxclient.github.io/FXclient/*
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM_addStyle
 // @run-at       document-start
+// @grant        none
 // ==/UserScript==
 
 (function() {
-    'use strict';
+  'use strict';
 
-    const LOBBIES = [
-        { id: 0, name: 'Lobby 0', icon: '🟢', host: 'territorial.io', desc: '备用大厅' },
-        { id: 1, name: 'Lobby 1', icon: '🔴', host: '1.territorial.io', desc: '默认主大厅' },
-        { id: 2, name: 'Lobby 2', icon: '🟡', host: '2.territorial.io', desc: '备选大厅' },
-    ];
+  const LOBBIES = [
+    { id: 0, name: 'Lobby 0', icon: '🟢', host: 'territorial.io', desc: '备用大厅' },
+    { id: 1, name: 'Lobby 1', icon: '🔴', host: '1.territorial.io', desc: '默认主大厅' },
+    { id: 2, name: 'Lobby 2', icon: '🟡', host: '2.territorial.io', desc: '备选大厅' },
+  ];
 
-    let currentLobbyIndex = GM_getValue('tt_lobby_index', 1);
-    let targetHost = LOBBIES[currentLobbyIndex].host;
-    let scriptInjected = false;
+  let currentLobbyIndex = 1;
+  try {
+    const stored = localStorage.getItem('tt_lobby_id');
+    if (stored !== null) currentLobbyIndex = parseInt(stored);
+  } catch(e) {}
 
-    function getCurrentLobby() {
-        return LOBBIES[currentLobbyIndex];
-    }
+  let targetHost = LOBBIES[currentLobbyIndex].host;
+  let scriptInjected = false;
+  let originalWS = null;
 
-    function switchLobby(index) {
-        if (index < 0 || index >= LOBBIES.length) return;
-        currentLobbyIndex = index;
-        targetHost = LOBBIES[index].host;
-        GM_setValue('tt_lobby_index', index);
-        updateUI();
-        injectGameScript();
-        showToast(`已切换到 ${LOBBIES[index].name}`);
-    }
-
-    function injectGameScript() {
-        if (scriptInjected) {
-            const existing = document.getElementById('tt-lobby-script');
-            if (existing) existing.remove();
-        }
-
-        const script = document.createElement('script');
-        script.id = 'tt-lobby-script';
-        script.dataset.targetHost = targetHost;
-        script.textContent = `
-            (function(){
-                const SERVER="${targetHost}";
-                const O=window.WebSocket;
-                window.WebSocket=function(u,p){
-                    let M=u;
-                    if(u&&typeof u==="string"){
-                        try{
-                            const U=new URL(u);
-                            const h=U.hostname;
-                            if(h.includes("territorial.io")||h.includes("fxclient.github.io")){
-                                U.hostname=SERVER;
-                                M=U.toString();
-                            }
-                        }catch(e){}
-                    }
-                    const w=p?new O(M,p):new O(M);
-                    return w;
-                };
-                window.WebSocket.prototype=O.prototype;
-            })();
-        `;
-        document.documentElement.appendChild(script);
-        scriptInjected = true;
-    }
-
-    function showToast(message) {
-        const toast = document.createElement('div');
-        toast.id = 'tt-lobby-toast';
-        toast.style.cssText = `
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            background: rgba(99, 102, 241, 0.9);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 14px;
-            z-index: 99999;
-            animation: ttToastIn 0.3s ease, ttToastOut 0.3s ease 2.5s forwards;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-        `;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            const el = document.getElementById('tt-lobby-toast');
-            if (el) el.remove();
-        }, 3000);
-    }
-
-    function createUI() {
-        const container = document.createElement('div');
-        container.id = 'tt-lobby-container';
-        container.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 99999;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        `;
-
-        const panel = document.createElement('div');
-        panel.id = 'tt-lobby-panel';
-        panel.style.cssText = `
-            background: rgba(15, 23, 42, 0.95);
-            border-radius: 16px;
-            padding: 16px;
-            border: 2px solid rgba(99, 102, 241, 0.3);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            min-width: 200px;
-        `;
-
-        const header = document.createElement('div');
-        header.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        `;
-
-        const title = document.createElement('span');
-        title.style.cssText = `
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        `;
-        title.innerHTML = '🏰 <span>TT Lobby</span>';
-
-        const toggleBtn = document.createElement('button');
-        toggleBtn.id = 'tt-lobby-toggle';
-        toggleBtn.innerHTML = '▼';
-        toggleBtn.style.cssText = `
-            background: none;
-            border: none;
-            color: #8892b0;
-            font-size: 10px;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 4px;
-            transition: all 0.2s;
-        `;
-        toggleBtn.onmouseenter = () => toggleBtn.style.color = 'white';
-        toggleBtn.onmouseleave = () => toggleBtn.style.color = '#8892b0';
-
-        header.appendChild(title);
-        header.appendChild(toggleBtn);
-        panel.appendChild(header);
-
-        const lobbyList = document.createElement('div');
-        lobbyList.id = 'tt-lobby-list';
-        lobbyList.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        `;
-
-        LOBBIES.forEach((lobby, index) => {
-            const btn = document.createElement('button');
-            btn.style.cssText = `
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                width: 100%;
-                padding: 10px 12px;
-                border: 2px solid transparent;
-                border-radius: 10px;
-                background: ${index === currentLobbyIndex ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)'};
-                cursor: pointer;
-                transition: all 0.2s;
-                text-align: left;
-            `;
-
-            if (index === currentLobbyIndex) {
-                btn.style.borderColor = '#6366f1';
-                btn.style.boxShadow = '0 0 10px rgba(99, 102, 241, 0.3)';
-            }
-
-            btn.onmouseenter = () => {
-                btn.style.background = 'rgba(255, 255, 255, 0.1)';
-            };
-            btn.onmouseleave = () => {
-                btn.style.background = index === currentLobbyIndex ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.05)';
-            };
-
-            btn.onclick = () => switchLobby(index);
-
-            const left = document.createElement('span');
-            left.style.cssText = `
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            `;
-            left.innerHTML = `<span style="font-size: 18px">${lobby.icon}</span>`;
-
-            const right = document.createElement('span');
-            right.style.cssText = `
-                text-align: right;
-            `;
-            const name = document.createElement('span');
-            name.style.cssText = `
-                display: block;
-                font-size: 13px;
-                font-weight: 500;
-                color: white;
-            `;
-            name.textContent = lobby.name;
-            const desc = document.createElement('span');
-            desc.style.cssText = `
-                display: block;
-                font-size: 9px;
-                color: #8892b0;
-            `;
-            desc.textContent = lobby.desc;
-
-            right.appendChild(name);
-            right.appendChild(desc);
-            btn.appendChild(left);
-            btn.appendChild(right);
-            lobbyList.appendChild(btn);
-        });
-
-        panel.appendChild(lobbyList);
-
-        const footer = document.createElement('div');
-        footer.style.cssText = `
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        `;
-
-        const currentLabel = document.createElement('span');
-        currentLabel.style.cssText = `
-            font-size: 10px;
-            color: #6366f1;
-            font-weight: 500;
-        `;
-        currentLabel.textContent = `当前: ${getCurrentLobby().name}`;
-        footer.appendChild(currentLabel);
-
-        container.appendChild(panel);
-        document.body.appendChild(container);
-
-        let collapsed = false;
-        toggleBtn.onclick = () => {
-            collapsed = !collapsed;
-            toggleBtn.innerHTML = collapsed ? '▲' : '▼';
-            lobbyList.style.display = collapsed ? 'none' : 'flex';
-            footer.style.display = collapsed ? 'none' : 'block';
-            panel.style.minWidth = collapsed ? '60px' : '200px';
-            title.innerHTML = collapsed ? '🏰' : '🏰 <span>TT Lobby</span>';
-        };
-    }
-
-    GM_addStyle(`
-        @keyframes ttToastIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes ttToastOut {
-            from { opacity: 1; transform: translateX(0); }
-            to { opacity: 0; transform: translateX(20px); }
-        }
-        #tt-lobby-container {
-            animation: ttToastIn 0.3s ease;
-        }
-    `);
-
-    if (document.body) {
-        createUI();
-        injectGameScript();
+  function injectWSHook() {
+    if (scriptInjected) return;
+    if (window._ttOrigWS) {
+      originalWS = window._ttOrigWS;
     } else {
-        document.addEventListener('DOMContentLoaded', () => {
-            createUI();
-            injectGameScript();
-        });
+      originalWS = window.WebSocket;
+      window._ttOrigWS = originalWS;
     }
+
+    const O = originalWS;
+    const MyWS = function(u, p) {
+      let M = u;
+      if (u && typeof u === 'string') {
+        try {
+          const U = new URL(u);
+          if (U.hostname.includes('territorial.io') && U.pathname === '/s52/') {
+            U.hostname = targetHost;
+            M = U.toString();
+          }
+        } catch(e) {}
+      }
+      return p ? new O(M, p) : new O(M);
+    };
+    MyWS.prototype = O.prototype;
+    MyWS.prototype.constructor = MyWS;
+    MyWS.toString = function() { return O.toString(); };
+    MyWS.OPEN = O.OPEN;
+    MyWS.CLOSED = O.CLOSED;
+    MyWS.CLOSING = O.CLOSING;
+    MyWS.CONNECTING = O.CONNECTING;
+
+    window.WebSocket = MyWS;
+    scriptInjected = true;
+    console.log('[TT Lobby] WebSocket hook installed for', targetHost);
+  }
+
+  function switchLobby(index) {
+    if (index < 0 || index >= LOBBIES.length) return;
+    currentLobbyIndex = index;
+    targetHost = LOBBIES[index].host;
+    try {
+      localStorage.setItem('tt_lobby_id', index.toString());
+      localStorage.setItem('tt_lobby_host', targetHost);
+    } catch(e) {}
+    updateFab();
+    try {
+      if (typeof window.aiCommand746 === 'function') {
+        window.aiCommand746(0);
+        showToast('✓ 已切换到 ' + LOBBIES[index].name);
+      } else {
+        showToast('✓ 已设置 ' + LOBBIES[index].name + '，点击多人游戏生效');
+      }
+    } catch(e) {
+      showToast('✓ 已设置 ' + LOBBIES[index].name);
+    }
+  }
+
+  function createFab() {
+    if (document.getElementById('tt-lobby-fab')) return;
+    const fab = document.createElement('div');
+    fab.id = 'tt-lobby-fab';
+    fab.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;user-select:none;';
+    fab.innerHTML = `
+      <div id="tt-lobby-main" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.5);display:flex;align-items:center;gap:8px;transition:all .2s;">
+        <span style="font-size:18px">🏰</span>
+        <span class="tt-lobby-label">Lobby ${currentLobbyIndex}</span>
+        <span style="font-size:10px;margin-left:4px">▼</span>
+      </div>
+      <div id="tt-lobby-menu" style="display:none;margin-top:8px;background:rgba(15,23,42,.95);border-radius:12px;padding:8px;border:1px solid rgba(99,102,241,.3);box-shadow:0 4px 20px rgba(0,0,0,.5);min-width:200px;">
+        <div style="font-size:11px;color:#8892b0;padding:6px 8px 4px;">选择大厅</div>
+        ${LOBBIES.map((l, i) => `
+          <div class="tt-lobby-item" data-id="${i}" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;cursor:pointer;background:${i === currentLobbyIndex ? 'rgba(99,102,241,.2)' : 'transparent'};border:1px solid ${i === currentLobbyIndex ? '#6366f1' : 'transparent'};">
+            <span style="font-size:18px">${l.icon}</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500;color:#fff">${l.name}</div>
+              <div style="font-size:10px;color:#8892b0">${l.desc}</div>
+            </div>
+            ${i === currentLobbyIndex ? '<span style="color:#10b981;font-size:14px">✓</span>' : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+    document.body.appendChild(fab);
+
+    const main = document.getElementById('tt-lobby-main');
+    const menu = document.getElementById('tt-lobby-menu');
+    main.onmouseenter = () => main.style.transform = 'scale(1.05)';
+    main.onmouseleave = () => main.style.transform = 'scale(1)';
+    main.onclick = (e) => {
+      e.stopPropagation();
+      const visible = menu.style.display === 'block';
+      menu.style.display = visible ? 'none' : 'block';
+    };
+
+    fab.querySelectorAll('.tt-lobby-item').forEach(item => {
+      item.onmouseenter = () => { if (!item.style.background.includes('99, 102, 241')) item.style.background = 'rgba(255,255,255,.05)'; };
+      item.onmouseleave = () => { const id = parseInt(item.dataset.id); item.style.background = id === currentLobbyIndex ? 'rgba(99,102,241,.2)' : 'transparent'; };
+      item.onclick = (e) => {
+        e.stopPropagation();
+        const id = parseInt(item.dataset.id);
+        switchLobby(id);
+        setTimeout(() => { menu.style.display = 'none'; }, 300);
+      };
+    });
+
+    document.addEventListener('click', () => { menu.style.display = 'none'; });
+  }
+
+  function updateFab() {
+    const label = document.querySelector('.tt-lobby-label');
+    if (label) label.textContent = 'Lobby ' + currentLobbyIndex;
+    const main = document.getElementById('tt-lobby-main');
+    if (main) {
+      main.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+      setTimeout(() => { main.style.background = 'linear-gradient(135deg,#6366f1,#8b5cf6)'; }, 800);
+    }
+    const fab = document.getElementById('tt-lobby-fab');
+    if (fab) createFab();
+  }
+
+  function showToast(message) {
+    const old = document.getElementById('tt-lobby-toast');
+    if (old) old.remove();
+    const toast = document.createElement('div');
+    toast.id = 'tt-lobby-toast';
+    toast.style.cssText = 'position:fixed;top:80px;right:20px;z-index:100000;background:rgba(16,185,129,.95);color:#fff;padding:10px 16px;border-radius:10px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;font-size:13px;font-weight:500;box-shadow:0 4px 15px rgba(16,185,129,.4);animation:ttToastIn .3s ease;';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 2500);
+  }
+
+  // 注入 WebSocket 钩子
+  injectWSHook();
+
+  // 在 document-start 时立即执行钩子，后续也需要在 DOMContentLoaded 后再次确保
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      injectWSHook();
+      createFab();
+    });
+  } else {
+    injectWSHook();
+    createFab();
+  }
+
+  // 监听可能的 SPA 重新初始化
+  let lastAiCmd = window.aiCommand746;
+  setInterval(() => {
+    if (window.aiCommand746 !== lastAiCmd) {
+      lastAiCmd = window.aiCommand746;
+      console.log('[TT Lobby] Game re-initialized');
+    }
+  }, 1000);
 
 })();

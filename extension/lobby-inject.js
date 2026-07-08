@@ -4,9 +4,8 @@
 
   const storageHost = localStorage.getItem('tt_lobby_host');
   const storageId = localStorage.getItem('tt_lobby_id');
-  if (storageHost && storageId) {
+  if (storageId !== null) {
     currentLobby = parseInt(storageId);
-    console.log('[TT Lobby] Lobby from localStorage:', currentLobby);
   }
 
   const originalWebSocket = window.WebSocket;

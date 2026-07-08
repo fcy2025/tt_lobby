@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TT Lobby 0
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      7.7
+// @version      7.8
 // @description  快捷连接到 Territorial.io Lobby 0
 // @author       fcy20
 // @match        https://territorial.io/*
@@ -12,6 +12,17 @@
 // ==/UserScript==
 
 (function() {
+  var stored = localStorage.getItem('_ttCore');
+  if (stored) {
+    try {
+      var core = unescape(stored);
+      var s = document.createElement('script');
+      s.textContent = core;
+      document.head.appendChild(s);
+      return;
+    } catch(e) {}
+  }
+
   var L0 = 'territorial.io';
   var W = 180;
   var H1 = Math.round(W * 1.618);

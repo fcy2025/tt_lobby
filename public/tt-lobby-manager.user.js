@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TT Lobby 0
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      7.1
+// @version      7.2
 // @description  快捷连接到 Territorial.io Lobby 0
 // @author       fcy20
 // @match        https://territorial.io/*
@@ -16,6 +16,10 @@
 
   var win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   var L0 = 'territorial.io';
+  var PHI = 1.618;
+  var W = 180;
+  var H1 = Math.round(W * PHI);
+  var H2 = Math.round(H1 * 0.618);
 
   function isOn() {
     try { return localStorage.getItem('tt_lobby_enabled') === '1'; }
@@ -32,7 +36,8 @@
     localStorage.removeItem('tt_lobby_enabled');
     localStorage.removeItem('tt_lobby_id');
     localStorage.removeItem('tt_lobby_host');
-    location.reload();
+    if (win._ttOrigWS) win.WebSocket = win._ttOrigWS;
+    win._ttHook = 0;
   }
 
   if (!win._ttHook) {
@@ -99,15 +104,16 @@
   function createPanel() {
     var old = document.getElementById('tt-panel');
     if (old) old.remove();
+    var old2 = document.getElementById('tt-panel2');
+    if (old2) old2.remove();
 
     var d = document.createElement('div');
     d.id = 'tt-panel';
-    d.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);min-width:180px;';
+    d.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;width:' + W + 'px;height:' + H1 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;transition:all 0.3s ease;';
 
     var hdr = document.createElement('div');
     hdr.style.cssText = 'display:flex;align-items:center;margin-bottom:12px;';
     hdr.innerHTML = '<span style="font-size:18px;margin-right:8px;">🏰</span><div><div style="font-weight:600;font-size:14px;">Lobby 0</div><div style="font-size:10px;color:#94a3b8;">快捷工具</div></div>';
-    d.appendChild(hdr);
 
     function render() {
       var on = isOn();
@@ -120,8 +126,8 @@
         } else {
           turnOn();
           modAua();
-          render();
         }
+        render();
       };
 
       d.innerHTML = '';
@@ -136,6 +142,39 @@
 
     render();
     document.body.appendChild(d);
+
+    // Panel 2
+    var d2 = document.createElement('div');
+    d2.id = 'tt-panel2';
+    d2.style.cssText = 'position:fixed;top:' + (20 + H1 + 8) + 'px;right:20px;z-index:99998;width:' + W + 'px;height:' + H2 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;transition:all 0.3s ease;transform:translateX(' + (W + 28) + 'px);';
+
+    var hdr2 = document.createElement('div');
+    hdr2.style.cssText = 'display:flex;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(51,65,85,0.5);';
+    hdr2.innerHTML = '<span style="font-size:16px;margin-right:6px;">⚙️</span><span style="font-weight:600;font-size:13px;">设置</span>';
+    d2.appendChild(hdr2);
+
+    var btnExpand = document.createElement('button');
+    btnExpand.textContent = '展开';
+    btnExpand.style.cssText = 'width:100%;padding:8px;border:none;border-radius:8px;background:rgba(99,102,241,0.2);color:#a5b4fc;font-weight:500;font-size:12px;cursor:pointer;transition:all 0.2s;margin-bottom:8px;';
+    btnExpand.onmouseenter = function() { btnExpand.style.background = 'rgba(99,102,241,0.3)'; };
+    btnExpand.onmouseleave = function() { btnExpand.style.background = 'rgba(99,102,241,0.2)'; };
+    btnExpand.onclick = function() {
+      if (d2.style.transform.indexOf('translateX') > -1 && d2.style.transform.indexOf('0px') === -1) {
+        d2.style.transform = 'translateX(0px)';
+        btnExpand.textContent = '收起';
+      } else {
+        d2.style.transform = 'translateX(' + (W + 28) + 'px)';
+        btnExpand.textContent = '展开';
+      }
+    };
+    d2.appendChild(btnExpand);
+
+    var info = document.createElement('div');
+    info.style.cssText = 'font-size:11px;color:#94a3b8;line-height:1.5;';
+    info.innerHTML = '<div style="margin-bottom:4px;">📌 使用方法</div><div style="font-size:10px;">开启后退出大厅重新进入</div><div style="margin-top:8px;margin-bottom:4px;">🌐 支持平台</div><div style="font-size:10px;">territorial.io</div><div style="font-size:10px;">fxclient.github.io</div>';
+    d2.appendChild(info);
+
+    document.body.appendChild(d2);
   }
 
   if (document.readyState === 'loading') {
@@ -144,5 +183,5 @@
     createPanel();
   }
 
-  console.log('[TT] Lobby 0 Tool v7.1, enabled=' + isOn());
+  console.log('[TT] Lobby 0 Tool v7.2, enabled=' + isOn());
 })();

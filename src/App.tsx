@@ -5,9 +5,13 @@ const getBookmarkCode = (): string => {
   code += "var ok=location.hostname.indexOf('territorial.io')>-1||location.hostname.indexOf('fxclient')>-1;";
   code += "if(!ok){alert('请先打开游戏页面');return;}";
   code += "var L0='territorial.io';";
+  code += "var PHI=1.618;";
+  code += "var W=180;";
+  code += "var H1=Math.round(W*PHI);";
+  code += "var H2=Math.round(H1*0.618);";
   code += "function _ttG(){try{return localStorage.getItem('tt_lobby_enabled')==='1';}catch(e){return false;}}";
   code += "function _ttE(){localStorage.setItem('tt_lobby_enabled','1');localStorage.setItem('tt_lobby_id','0');localStorage.setItem('tt_lobby_host',L0);}";
-  code += "function _ttD(){localStorage.removeItem('tt_lobby_enabled');localStorage.removeItem('tt_lobby_id');localStorage.removeItem('tt_lobby_host');location.reload();}";
+  code += "function _ttD(){localStorage.removeItem('tt_lobby_enabled');localStorage.removeItem('tt_lobby_id');localStorage.removeItem('tt_lobby_host');if(window._ttOrigWS){window.WebSocket=window._ttOrigWS;}window._ttHook=0;}";
   // WebSocket Hook
   code += "if(!window._ttHook){";
   code += "window._ttHook=1;";
@@ -51,25 +55,26 @@ const getBookmarkCode = (): string => {
   code += "_ttM();";
   code += "var b1T=setInterval(function(){if(_ttM())clearInterval(b1T);},300);";
   code += "setTimeout(function(){clearInterval(b1T);},10000);";
-  // UI Panel
-  code += "var old=document.getElementById('tt-panel');";
-  code += "if(old)old.remove();";
+  // UI
+  code += "var old=document.getElementById('tt-panel');if(old)old.remove();";
+  code += "var old2=document.getElementById('tt-panel2');if(old2)old2.remove();";
+  // Panel 1
   code += "var d=document.createElement('div');";
   code += "d.id='tt-panel';";
-  code += "d.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);min-width:180px;';";
+  code += "d.style.cssText='position:fixed;top:20px;right:20px;z-index:99999;width:'+W+'px;height:'+H1+'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;transition:all 0.3s ease;';";
   // Header
   code += "var hdr=document.createElement('div');";
   code += "hdr.style.cssText='display:flex;align-items:center;margin-bottom:12px;';";
   code += "hdr.innerHTML='<span style=\"font-size:18px;margin-right:8px;\">🏰</span><div><div style=\"font-weight:600;font-size:14px;\">Lobby 0</div><div style=\"font-size:10px;color:#94a3b8;\">快捷工具</div></div>';";
   code += "d.appendChild(hdr);";
-  // Toggle Switch
+  // Toggle
   code += "function render(){";
   code += "var on=_ttG();";
   code += "var sw=document.createElement('div');";
   code += "sw.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:'+(on?'rgba(16,185,129,0.2)':'rgba(75,85,99,0.3)')+';border:1px solid '+(on?'rgba(16,185,129,0.5)':'rgba(75,85,99,0.5)')+';';";
   code += "sw.innerHTML='<span style=\"font-weight:500;font-size:13px;\">'+(on?'已启用':'未启用')+'</span><div style=\"width:44px;height:24px;border-radius:12px;background:'+(on?'#10b981':'#4b5563')+';position:relative;transition:background 0.3s ease;cursor:pointer;\"><div style=\"width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:'+(on?'22px':'2px')+';transition:left 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);\"></div></div>';";
   code += "sw.onclick=function(){";
-  code += "if(on){_ttD();}else{_ttE();_ttM();render();}";
+  code += "if(on){_ttD();}else{_ttE();_ttM();}render();renderPanel2();";
   code += "};";
   code += "d.innerHTML='';";
   code += "d.appendChild(hdr);";
@@ -82,6 +87,37 @@ const getBookmarkCode = (): string => {
   code += "}";
   code += "render();";
   code += "document.body.appendChild(d);";
+  // Panel 2 - Expand/Collapse
+  code += "var d2=document.createElement('div');";
+  code += "d2.id='tt-panel2';";
+  code += "d2.style.cssText='position:fixed;top:'+(20+H1+8)+'px;right:20px;z-index:99998;width:'+W+'px;height:'+H2+'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;transition:all 0.3s ease;transform:translateX('+(W+28)+'px);';";
+  code += "var hdr2=document.createElement('div');";
+  code += "hdr2.style.cssText='display:flex;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(51,65,85,0.5);';";
+  code += "hdr2.innerHTML='<span style=\"font-size:16px;margin-right:6px;\">⚙️</span><span style=\"font-weight:600;font-size:13px;\">设置</span>';";
+  code += "d2.appendChild(hdr2);";
+  // Expand/Collapse Button
+  code += "var btnExpand=document.createElement('button');";
+  code += "btnExpand.textContent='展开';";
+  code += "btnExpand.style.cssText='width:100%;padding:8px;border:none;border-radius:8px;background:rgba(99,102,241,0.2);color:#a5b4fc;font-weight:500;font-size:12px;cursor:pointer;transition:all 0.2s;margin-bottom:8px;';";
+  code += "btnExpand.onmouseenter=function(){btnExpand.style.background='rgba(99,102,241,0.3)';};";
+  code += "btnExpand.onmouseleave=function(){btnExpand.style.background='rgba(99,102,241,0.2)';};";
+  code += "btnExpand.onclick=function(){";
+  code += "if(d2.style.transform.indexOf('translateX')>-1&&d2.style.transform.indexOf('0px')===-1){";
+  code += "d2.style.transform='translateX(0px)';btnExpand.textContent='收起';";
+  code += "}else{";
+  code += "d2.style.transform='translateX('+(W+28)+'px)';btnExpand.textContent='展开';";
+  code += "}";
+  code += "};";
+  code += "d2.appendChild(btnExpand);";
+  // Info
+  code += "var info=document.createElement('div');";
+  code += "info.style.cssText='font-size:11px;color:#94a3b8;line-height:1.5;';";
+  code += "info.innerHTML='<div style=\"margin-bottom:4px;\">📌 使用书签</div><div style=\"font-size:10px;\">点击书签打开控制面板</div><div style=\"margin-top:8px;margin-bottom:4px;\">🌐 支持平台</div><div style=\"font-size:10px;\">territorial.io</div><div style=\"font-size:10px;\">fxclient.github.io</div>';";
+  code += "d2.appendChild(info);";
+  code += "document.body.appendChild(d2);";
+  code += "function renderPanel2(){";
+  code += "btnExpand.textContent=d2.style.transform.indexOf('translateX')>-1&&d2.style.transform.indexOf('0px')===-1?'展开':'收起';";
+  code += "}";
   code += "})();";
   return code;
 };

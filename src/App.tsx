@@ -14,24 +14,34 @@ function App() {
     const host = LOBBIES[lobbyId].host;
     return `(function(){
       if(!window._ttOrigWS){window._ttOrigWS=window.WebSocket}
+      if(!window._ttConns){window._ttConns=[]}
       var O=window._ttOrigWS;
-      var done=false;
-      var active=0;
+      var conns=window._ttConns;
+      try{for(var i=0;i<conns.length;i++){try{conns[i].close()}catch(e){}}}catch(e){}
+      conns.length=0;
       var N=function(u,p){
         var M=u;
-        if(!done&&u&&typeof u==='string'){
+        var isTT=false;
+        if(u&&typeof u==='string'){
           try{
             var U=new URL(u);
             if(U.hostname.includes('territorial.io')){
-              U.hostname='${host}';
-              M=U.toString();
-              done=true;
+              isTT=true;
+              if(conns.length===0){
+                U.hostname='${host}';
+                M=U.toString();
+              }
             }
           }catch(e){}
         }
         var w=p?new O(M,p):new O(M);
-        active++;
-        w.addEventListener('close',function(){active--;if(active<=0){done=false;active=0;}});
+        if(isTT){
+          conns.push(w);
+          w.addEventListener('close',function(){
+            var idx=conns.indexOf(w);
+            if(idx>=0)conns.splice(idx,1);
+          });
+        }
         return w;
       };
       N.prototype=O.prototype;

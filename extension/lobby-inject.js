@@ -10,30 +10,29 @@
   }
 
   const originalWebSocket = window.WebSocket;
-  let redirected = false;
-  let activeCount = 0;
+  const activeConns = [];
   window.WebSocket = function(url, protocols) {
     let targetUrl = url;
-    if (!redirected) {
-      try {
-        const parsedUrl = new URL(url);
-        if (parsedUrl.hostname.includes('territorial.io')) {
+    let isTT = false;
+    try {
+      const parsedUrl = new URL(url);
+      if (parsedUrl.hostname.includes('territorial.io')) {
+        isTT = true;
+        if (activeConns.length === 0) {
           parsedUrl.hostname = servers[currentLobby];
           targetUrl = parsedUrl.toString();
-          redirected = true;
           console.log('[TT Lobby] WebSocket redirected to:', targetUrl);
         }
-      } catch(e) {}
-    }
-    const ws = new originalWebSocket(targetUrl, protocols);
-    activeCount++;
-    ws.addEventListener('close', () => {
-      activeCount--;
-      if (activeCount <= 0) {
-        redirected = false;
-        activeCount = 0;
       }
-    });
+    } catch(e) {}
+    const ws = new originalWebSocket(targetUrl, protocols);
+    if (isTT) {
+      activeConns.push(ws);
+      ws.addEventListener('close', () => {
+        const idx = activeConns.indexOf(ws);
+        if (idx >= 0) activeConns.splice(idx, 1);
+      });
+    }
     return ws;
   };
   window.WebSocket.prototype = originalWebSocket.prototype;
@@ -45,7 +44,10 @@
       localStorage.setItem('tt_lobby_host', servers[currentLobby]);
       localStorage.setItem('tt_lobby_id', currentLobby.toString());
       console.log('[TT Lobby] Lobby switched to:', currentLobby);
-      location.reload();
+      for (let i = activeConns.length - 1; i >= 0; i--) {
+        try { activeConns[i].close(); } catch(e) {}
+      }
+      activeConns.length = 0;
     }
   });
 

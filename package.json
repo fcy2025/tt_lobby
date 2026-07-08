@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && node scripts/package-extension.cjs",
+    "start": "node server.js",
     "package-extension": "node scripts/package-extension.cjs",
     "lint": "eslint .",
     "preview": "vite preview"

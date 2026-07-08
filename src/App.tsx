@@ -83,14 +83,7 @@ const getBookmarkCode = (): string => {
 };
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'bookmark' | 'tampermonkey'>('bookmark');
-
   const bookmarkUrl = getBookmarkCode();
-
-  const installUserscript = () => {
-    const base = (typeof import.meta !== 'undefined' && (import.meta as any).env?.BASE_URL) || '/';
-    window.open(`${window.location.origin}${base}tt-lobby-manager.user.js`, '_blank');
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white">
@@ -102,93 +95,39 @@ function App() {
         </div>
 
         <div className="glass-panel rounded-2xl p-6 mb-5">
-          <div className="flex gap-2 mb-5">
-            <button
-              onClick={() => setActiveTab('bookmark')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'bookmark'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30'
-                  : 'bg-slate-800/50 text-gray-400 hover:bg-slate-700/50'
-              }`}>
-              📌 书签
-            </button>
-            <button
-              onClick={() => setActiveTab('tampermonkey')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'tampermonkey'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
-                  : 'bg-slate-800/50 text-gray-400 hover:bg-slate-700/50'
-              }`}>
-              ⭐ 油猴脚本
-            </button>
+          <div className="text-center mb-5">
+            <div className="text-3xl mb-2">📌</div>
+            <h2 className="text-xl font-bold mb-1">快捷书签</h2>
+            <p className="text-gray-400 text-xs">拖拽或复制代码使用</p>
           </div>
 
-          {activeTab === 'bookmark' && (
-            <div className="space-y-4">
-              <div className="bg-emerald-900/20 rounded-lg p-4 border border-emerald-900/30">
-                <p className="text-sm text-emerald-300 font-semibold mb-2">📌 桌面端推荐</p>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  无需安装扩展，拖拽一次即可永久使用。<br/>
-                  每次打开游戏点一下书签即可。
-                </p>
-              </div>
+          <a href={bookmarkUrl} draggable={true}
+            onClick={(e) => { e.preventDefault(); }}
+            className="flex items-center justify-center gap-3 w-full p-5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-emerald-500/30 cursor-grab active:cursor-grabbing select-none mb-4">
+            <span className="text-2xl">🏰</span>
+            <span className="font-bold text-lg">Lobby 0</span>
+          </a>
 
-              <a href={bookmarkUrl} draggable={true}
-                onClick={(e) => { e.preventDefault(); }}
-                className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-emerald-500/30 cursor-grab active:cursor-grabbing select-none">
-                <span className="text-2xl">🏰</span>
-                <span className="font-bold text-lg">Lobby 0</span>
-                <span className="text-xs text-white/70">← 拖拽到收藏夹栏</span>
-              </a>
-
-              <div className="bg-slate-800/40 rounded-lg p-3 border border-slate-700/50">
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  <b className="text-gray-200">操作方法：</b><br/>
-                  1. 按住上方按钮拖到浏览器收藏夹栏<br/>
-                  2. 打开 territorial.io<br/>
-                  3. 点击收藏夹栏中的"Lobby 0"书签
-                </p>
-              </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 text-center">
+              <div className="text-2xl mb-2">🖥️</div>
+              <p className="text-xs font-semibold text-gray-200 mb-1">桌面端</p>
+              <p className="text-xs text-gray-400">按住按钮拖到收藏夹栏</p>
             </div>
-          )}
-
-          {activeTab === 'tampermonkey' && (
-            <div className="space-y-4">
-              <div className="bg-amber-900/20 rounded-lg p-4 border border-amber-900/30">
-                <p className="text-sm text-amber-300 font-semibold mb-2">⭐ 移动端推荐</p>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  安装一次自动生效，打开游戏直接显示面板。<br/>
-                  桌面端同样可用。
-                </p>
-              </div>
-
-              <button onClick={installUserscript}
-                className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-amber-500/30">
-                <span className="text-2xl">📥</span>
-                <span className="font-bold text-lg">安装油猴脚本</span>
-              </button>
-
-              <div className="bg-slate-800/40 rounded-lg p-4 border border-slate-700/50">
-                <p className="text-xs text-gray-400 leading-relaxed mb-3">
-                  <b className="text-gray-200">💡 先安装油猴扩展：</b>
-                </p>
-                <div className="space-y-2">
-                  <div className="bg-slate-700/30 rounded-lg p-2.5">
-                    <p className="text-xs font-semibold text-gray-200 mb-1">🖥️ 桌面端</p>
-                    <p className="text-xs text-gray-400">Chrome / Edge / Firefox<br/>安装 Tampermonkey 扩展</p>
-                  </div>
-                  <div className="bg-slate-700/30 rounded-lg p-2.5">
-                    <p className="text-xs font-semibold text-gray-200 mb-1">🤖 安卓</p>
-                    <p className="text-xs text-gray-400">Kiwi Browser + Tampermonkey<br/>Firefox + Tampermonkey</p>
-                  </div>
-                  <div className="bg-slate-700/30 rounded-lg p-2.5">
-                    <p className="text-xs font-semibold text-gray-200 mb-1">🍎 iOS</p>
-                    <p className="text-xs text-gray-400">Safari + Userscripts 扩展<br/>（App Store 免费下载）</p>
-                  </div>
-                </div>
-              </div>
+            <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/50 text-center">
+              <div className="text-2xl mb-2">📱</div>
+              <p className="text-xs font-semibold text-gray-200 mb-1">移动端</p>
+              <p className="text-xs text-gray-400">复制代码到地址栏执行</p>
             </div>
-          )}
+          </div>
+
+          <div className="mt-4">
+            <a href="https://territorial.io/" target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/30 text-blue-400 text-sm font-medium transition-colors">
+              <span>🎮</span>
+              <span>打开游戏</span>
+            </a>
+          </div>
         </div>
 
         <div className="glass-panel rounded-2xl p-6 mb-5">
@@ -196,11 +135,11 @@ function App() {
 
           <div className="space-y-4">
             <div className="bg-emerald-900/10 rounded-xl p-4 border border-emerald-900/20">
-              <p className="text-sm font-semibold text-emerald-400 mb-3">📌 书签（桌面端）</p>
+              <p className="text-sm font-semibold text-emerald-400 mb-3">🖥️ 桌面端操作</p>
               <div className="space-y-2 text-xs text-gray-300">
                 <div className="flex gap-2">
                   <span className="text-emerald-400 font-bold">1</span>
-                  <span>按住 🏰 Lobby 0 拖到浏览器收藏夹栏</span>
+                  <span>按住 🏰 Lobby 0 按钮拖到浏览器收藏夹栏</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-emerald-400 font-bold">2</span>
@@ -208,7 +147,7 @@ function App() {
                 </div>
                 <div className="flex gap-2">
                   <span className="text-emerald-400 font-bold">3</span>
-                  <span>点击收藏夹栏中的书签</span>
+                  <span>点击收藏夹栏中的书签，右上角出现控制面板</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-emerald-400 font-bold">4</span>
@@ -217,24 +156,28 @@ function App() {
               </div>
             </div>
 
-            <div className="bg-amber-900/10 rounded-xl p-4 border border-amber-900/20">
-              <p className="text-sm font-semibold text-amber-400 mb-3">⭐ 油猴脚本（全平台）</p>
+            <div className="bg-blue-900/10 rounded-xl p-4 border border-blue-900/20">
+              <p className="text-sm font-semibold text-blue-400 mb-3">📱 移动端操作</p>
               <div className="space-y-2 text-xs text-gray-300">
                 <div className="flex gap-2">
-                  <span className="text-amber-400 font-bold">1</span>
-                  <span>安装对应平台的油猴扩展</span>
+                  <span className="text-blue-400 font-bold">1</span>
+                  <span>在浏览器中打开本工具页面</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-amber-400 font-bold">2</span>
-                  <span>点击"安装油猴脚本"按钮</span>
+                  <span className="text-blue-400 font-bold">2</span>
+                  <span>长按 🏰 Lobby 0 按钮选择"复制链接"</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-amber-400 font-bold">3</span>
-                  <span>打开游戏，控制面板自动显示</span>
+                  <span className="text-blue-400 font-bold">3</span>
+                  <span>打开 territorial.io，等待游戏加载</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-amber-400 font-bold">4</span>
-                  <span>启用后退出大厅重新进入即可</span>
+                  <span className="text-blue-400 font-bold">4</span>
+                  <span>点击地址栏，粘贴链接并回车</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-blue-400 font-bold">5</span>
+                  <span>右上角出现控制面板，启用后退出重进</span>
                 </div>
               </div>
             </div>
@@ -246,7 +189,7 @@ function App() {
         </div>
 
         <footer className="text-center text-gray-500 text-xs">
-          <p>TT Lobby 0 快捷工具 v7.9</p>
+          <p>TT Lobby 0 快捷工具 v8.0</p>
         </footer>
       </div>
     </div>

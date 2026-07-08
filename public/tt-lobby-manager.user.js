@@ -1,19 +1,22 @@
 // ==UserScript==
 // @name         TT Lobby Manager
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      5.0
+// @version      6.0
 // @description  Territorial.io 大厅切换
 // @author       fcy20
 // @match        https://territorial.io/*
 // @match        https://*.territorial.io/*
+// @match        http://territorial.io/*
+// @match        http://*.territorial.io/*
 // @match        https://fxclient.github.io/FXclient/*
 // @run-at       document-start
-// @grant        none
+// @grant        unsafeWindow
 // ==/UserScript==
 
 (function() {
   'use strict';
 
+  var win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   var HOSTS = ['territorial.io', '1.territorial.io', '2.territorial.io'];
 
   function getId() {
@@ -26,11 +29,16 @@
     localStorage.setItem('tt_lobby_host', HOSTS[id]);
   }
 
-  if (!window._ttHook) {
-    window._ttHook = 1;
-    var OrigWS = window.WebSocket;
+  function getTarget() {
+    return HOSTS[getId()] || '1.territorial.io';
+  }
 
-    window.WebSocket = function(url, protocols) {
+  // === Strategy 1: Hook WebSocket ===
+  if (!win._ttHook) {
+    win._ttHook = 1;
+    var OrigWS = win.WebSocket;
+
+    win.WebSocket = function(url, protocols) {
       var targetUrl = url;
       try {
         var parsedUrl = new URL(url);
@@ -38,22 +46,21 @@
         var path = parsedUrl.pathname;
         var ttHost = host === 'territorial.io' || host === '1.territorial.io' || host === '2.territorial.io' || host === 'game.territorial.io';
         if (ttHost) {
-          var id = getId();
-          var targetHost = HOSTS[id] || '1.territorial.io';
+          var target = getTarget();
           if (path.length === 5 && path.charAt(0) === '/' && path.charAt(1) === 'x' && path.charAt(2) === '0') {
             var xId = parseInt(path.charAt(3));
             if (!isNaN(xId)) {
-              parsedUrl.pathname = '/x0' + id + '/';
+              parsedUrl.pathname = '/x0' + getId() + '/';
               if (host !== 'game.territorial.io') {
-                parsedUrl.hostname = targetHost;
+                parsedUrl.hostname = target;
               }
               targetUrl = parsedUrl.toString();
-              console.log('[TT] WS x0→', targetUrl);
+              console.log('[TT] WS x0 redirected:', url, '->', targetUrl);
             }
           } else if (path === '/s50/' || path === '/s51/' || path === '/s52/') {
-            parsedUrl.hostname = targetHost;
+            parsedUrl.hostname = target;
             targetUrl = parsedUrl.toString();
-            console.log('[TT] WS s→', targetUrl);
+            console.log('[TT] WS s redirected:', url, '->', targetUrl);
           }
         }
       } catch(e) {}
@@ -61,17 +68,78 @@
       return new OrigWS(targetUrl);
     };
 
-    window.WebSocket.prototype = OrigWS.prototype;
-    window.WebSocket.prototype.constructor = window.WebSocket;
-    window.WebSocket.toString = function() { return OrigWS.toString(); };
-    window.WebSocket.CONNECTING = 0;
-    window.WebSocket.OPEN = 1;
-    window.WebSocket.CLOSING = 2;
-    window.WebSocket.CLOSED = 3;
+    win.WebSocket.prototype = OrigWS.prototype;
+    win.WebSocket.prototype.constructor = win.WebSocket;
+    win.WebSocket.toString = function() { return OrigWS.toString(); };
+    win.WebSocket.CONNECTING = 0;
+    win.WebSocket.OPEN = 1;
+    win.WebSocket.CLOSING = 2;
+    win.WebSocket.CLOSED = 3;
 
-    console.log('[TT] Hook OK, lobby=' + getId());
+    console.log('[TT] WebSocket hook installed, lobby=' + getId());
   }
 
+  // === Strategy 2: Modify b1.z.aUa server array ===
+  function modifyAua(zObj) {
+    if (!zObj || !zObj.aUa) return false;
+    var target = getTarget();
+    var changed = false;
+    for (var i = 0; i < zObj.aUa.length; i++) {
+      if (zObj.aUa[i] !== target) {
+        zObj.aUa[i] = target;
+        changed = true;
+      }
+    }
+    if (changed) {
+      console.log('[TT] aUa modified to:', target, zObj.aUa);
+    }
+    return true;
+  }
+
+  function hookDi(zObj) {
+    if (!zObj || !zObj.di || zObj._ttDiHooked) return;
+    zObj._ttDiHooked = 1;
+    var origDi = zObj.di;
+    zObj.di = function() {
+      var result = origDi.apply(this, arguments);
+      var target = getTarget();
+      if (this.aUa) {
+        for (var i = 0; i < this.aUa.length; i++) {
+          this.aUa[i] = target;
+        }
+        console.log('[TT] aUa re-hooked after di(), target=' + target);
+      }
+      return result;
+    };
+    console.log('[TT] b1.z.di() hooked');
+  }
+
+  function tryModifyB1() {
+    if (win.b1 && win.b1.z) {
+      modifyAua(win.b1.z);
+      hookDi(win.b1.z);
+      return true;
+    }
+    return false;
+  }
+
+  // Try immediately and poll
+  if (!tryModifyB1()) {
+    var b1Timer = setInterval(function() {
+      if (tryModifyB1()) {
+        clearInterval(b1Timer);
+      }
+    }, 300);
+    // Stop polling after 30s
+    setTimeout(function() { clearInterval(b1Timer); }, 30000);
+  }
+
+  // Re-check periodically to handle re-initialization
+  setInterval(function() {
+    tryModifyB1();
+  }, 2000);
+
+  // === Strategy 3: UI Panel ===
   function createPanel() {
     var old = document.getElementById('tt-panel');
     if (old) old.remove();
@@ -89,11 +157,6 @@
     cls.onclick = function() { d.remove(); };
     hdr.appendChild(cls);
     d.appendChild(hdr);
-
-    var tip = document.createElement('div');
-    tip.style.cssText = 'font-size:11px;color:#94a3b8;margin-bottom:8px;';
-    tip.textContent = '切换后自动刷新页面';
-    d.appendChild(tip);
 
     var list = document.createElement('div');
     list.id = 'tt-list';
@@ -114,7 +177,14 @@
           if (l.id === c) return;
           setId(l.id);
           render();
-          setTimeout(function() { location.reload(); }, 300);
+          // Modify aUa immediately
+          tryModifyB1();
+          // Try to reconnect
+          try {
+            if (win.b1 && win.b1.z && typeof win.b1.z.sJ === 'function') {
+              win.b1.z.sJ();
+            }
+          } catch(e) {}
         };
         list.appendChild(row);
       });
@@ -127,4 +197,6 @@
   } else {
     createPanel();
   }
+
+  console.log('[TT] Lobby Manager v6.0 loaded, lobby=' + getId());
 })();

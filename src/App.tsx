@@ -7,6 +7,8 @@ const getBookmarkCode = (): string => {
   code += "var H=['territorial.io','1.territorial.io','2.territorial.io'];";
   code += "function _ttG(){try{return parseInt(localStorage.getItem('tt_lobby_id')||'1');}catch(e){return 1;}}";
   code += "function _ttS(id){localStorage.setItem('tt_lobby_id',id);localStorage.setItem('tt_lobby_host',H[id]);}";
+  code += "function _ttT(){return H[_ttG()]||'1.territorial.io';}";
+  // Strategy 1: Hook WebSocket
   code += "if(!window._ttHook){";
   code += "window._ttHook=1;";
   code += "var O=window.WebSocket;";
@@ -19,19 +21,19 @@ const getBookmarkCode = (): string => {
   code += "var tt=ph==='territorial.io'||ph==='1.territorial.io'||ph==='2.territorial.io'||ph==='game.territorial.io';";
   code += "if(tt){";
   code += "var id=_ttG();";
-  code += "var th=H[id]||'1.territorial.io';";
+  code += "var th=_ttT();";
   code += "if(pp.length===5&&pp.charAt(0)==='/'&&pp.charAt(1)==='x'&&pp.charAt(2)==='0'){";
   code += "var xi=parseInt(pp.charAt(3));";
   code += "if(!isNaN(xi)){";
   code += "pu.pathname='/x0'+id+'/';";
   code += "if(ph!=='game.territorial.io'){pu.hostname=th;}";
   code += "M=pu.toString();";
-  code += "console.log('[TT] WS x0→',M);";
+  code += "console.log('[TT] WS x0->',M);";
   code += "}";
   code += "}else if(pp==='/s50/'||pp==='/s51/'||pp==='/s52/'){";
   code += "pu.hostname=th;";
   code += "M=pu.toString();";
-  code += "console.log('[TT] WS s→',M);";
+  code += "console.log('[TT] WS s->',M);";
   code += "}";
   code += "}";
   code += "}catch(e){}";
@@ -41,8 +43,21 @@ const getBookmarkCode = (): string => {
   code += "window.WebSocket.prototype.constructor=window.WebSocket;";
   code += "window.WebSocket.toString=function(){return O.toString();};";
   code += "window.WebSocket.CONNECTING=0;window.WebSocket.OPEN=1;window.WebSocket.CLOSING=2;window.WebSocket.CLOSED=3;";
-  code += "console.log('[TT] Hook OK',_ttG());";
+  code += "console.log('[TT] WS Hook OK',_ttG());";
   code += "}";
+  // Strategy 2: Modify b1.z.aUa server array
+  code += "function _ttM(){";
+  code += "var t=_ttT();";
+  code += "if(window.b1&&window.b1.z&&window.b1.z.aUa){";
+  code += "var a=window.b1.z.aUa;";
+  code += "for(var i=0;i<a.length;i++){a[i]=t;}";
+  code += "console.log('[TT] aUa modified to',t);";
+  code += "return true;";
+  code += "}";
+  code += "return false;";
+  code += "}";
+  code += "_ttM();";
+  // UI Panel
   code += "var old=document.getElementById('tt-panel');";
   code += "if(old)old.remove();";
   code += "var d=document.createElement('div');";
@@ -59,7 +74,7 @@ const getBookmarkCode = (): string => {
   code += "d.appendChild(hdr);";
   code += "var tip=document.createElement('div');";
   code += "tip.style.cssText='font-size:11px;color:#94a3b8;margin-bottom:8px;';";
-  code += "tip.textContent='切换后自动刷新页面';";
+  code += "tip.textContent='选择后退出并重新进入大厅';";
   code += "d.appendChild(tip);";
   code += "var list=document.createElement('div');";
   code += "list.id='tt-list';";
@@ -78,7 +93,8 @@ const getBookmarkCode = (): string => {
   code += "if(l.id===c)return;";
   code += "_ttS(l.id);";
   code += "render();";
-  code += "setTimeout(function(){location.reload();},300);";
+  code += "_ttM();";
+  code += "try{if(window.b1&&window.b1.z&&typeof window.b1.z.sJ==='function'){window.b1.z.sJ();}}catch(e){}";
   code += "};";
   code += "list.appendChild(row);";
   code += "});";

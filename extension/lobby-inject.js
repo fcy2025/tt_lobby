@@ -53,7 +53,7 @@
           if (w.readyState === 1) {
             w.close();
           } else if (w.readyState === 0) {
-            w.onopen = function() { try { this.close(); } catch(e) {} };
+            w.addEventListener('open', function() { try { this.close(); } catch(e) {} }, { once: true });
           }
         } catch(e) {}
       }

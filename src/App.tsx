@@ -21,7 +21,9 @@ function App() {
         try{
           var w=conns[i];
           if(w.readyState===1){w.close();}
-          else if(w.readyState===0){w.onopen=function(){try{this.close()}catch(e){}};}
+          else if(w.readyState===0){
+            w.addEventListener('open',function(){try{this.close()}catch(e){}},{once:true});
+          }
         }catch(e){}
       }
       conns.length=0;

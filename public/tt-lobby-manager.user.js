@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TT Lobby 0
 // @namespace    https://github.com/fcy20/tt_lobby
-// @version      7.3
+// @version      7.4
 // @description  快捷连接到 Territorial.io Lobby 0
 // @author       fcy20
 // @match        https://territorial.io/*
@@ -12,14 +12,13 @@
 // ==/UserScript==
 
 (function() {
-  'use strict';
-
   var L0 = 'territorial.io';
   var PHI = 1.618;
   var W = 180;
   var H1 = Math.round(W * PHI);
   var H2 = Math.round(H1 * 0.618);
-  var TAB_W = 20;
+  var GAP = 8;
+  var TAB_W = 24;
 
   function isOn() {
     try { return localStorage.getItem('tt_lobby_enabled') === '1'; }
@@ -40,6 +39,7 @@
     window._ttHook = 0;
   }
 
+  // === WebSocket Hook (runs immediately at document-start) ===
   if (!window._ttHook) {
     window._ttHook = 1;
     window._ttOrigWS = window.WebSocket;
@@ -78,6 +78,7 @@
     window.WebSocket.CLOSED = 3;
   }
 
+  // === b1.z.aUa modification ===
   function modAua() {
     if (!isOn()) return false;
     if (window.b1 && window.b1.z && window.b1.z.aUa) {
@@ -98,19 +99,23 @@
     };
   }
 
-  var t = setInterval(function() { if (modAua()) hookDi(); }, 500);
-  setTimeout(function() { clearInterval(t); }, 30000);
+  var auaTimer = setInterval(function() { if (modAua()) hookDi(); }, 500);
+  setTimeout(function() { clearInterval(auaTimer); }, 30000);
 
+  // === UI Panel (waits for body) ===
   function createPanel() {
-    var old = document.getElementById('tt-panel');
-    if (old) old.remove();
-    var old2 = document.getElementById('tt-panel2');
-    if (old2) old2.remove();
+    var ow = document.getElementById('tt-wrap');
+    if (ow) ow.remove();
 
-    // Panel 1
+    // Wrapper
+    var wrap = document.createElement('div');
+    wrap.id = 'tt-wrap';
+    wrap.style.cssText = 'position:fixed;top:20px;right:0;z-index:99999;transition:transform 0.3s ease;';
+
+    // Panel 1 - Lobby 0 controls
     var d = document.createElement('div');
     d.id = 'tt-panel';
-    d.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;width:' + W + 'px;height:' + H1 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;';
+    d.style.cssText = 'width:' + W + 'px;height:' + H1 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;padding:14px;border-radius:14px 0 0 14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;margin-right:' + GAP + 'px;';
 
     var hdr = document.createElement('div');
     hdr.style.cssText = 'display:flex;align-items:center;margin-bottom:12px;';
@@ -122,12 +127,7 @@
       sw.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:' + (on ? 'rgba(16,185,129,0.2)' : 'rgba(75,85,99,0.3)') + ';border:1px solid ' + (on ? 'rgba(16,185,129,0.5)' : 'rgba(75,85,99,0.5)') + ';cursor:pointer;transition:all 0.2s;';
       sw.innerHTML = '<span style="font-weight:500;font-size:13px;">' + (on ? '已启用' : '未启用') + '</span><div style="width:44px;height:24px;border-radius:12px;background:' + (on ? '#10b981' : '#4b5563') + ';position:relative;transition:background 0.3s ease;"><div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (on ? '22px' : '2px') + ';transition:left 0.3s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div></div>';
       sw.onclick = function() {
-        if (on) {
-          turnOff();
-        } else {
-          turnOn();
-          modAua();
-        }
+        if (on) turnOff(); else { turnOn(); modAua(); }
         render();
       };
 
@@ -142,57 +142,72 @@
     }
 
     render();
-    document.body.appendChild(d);
+    wrap.appendChild(d);
 
-    // Panel 2 - with tab visible when collapsed
-    var expanded = false;
+    // Panel 2 - expand/collapse control
     var d2 = document.createElement('div');
     d2.id = 'tt-panel2';
-    d2.style.cssText = 'position:fixed;top:' + (20 + H1 + 8) + 'px;right:20px;z-index:99998;width:' + W + 'px;height:' + H2 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;transition:transform 0.3s ease;transform:translateX(calc(100% - ' + TAB_W + 'px));';
+    d2.style.cssText = 'width:' + W + 'px;height:' + H2 + 'px;background:rgba(30,41,59,0.95);backdrop-filter:blur(12px);color:#fff;border-radius:14px 0 0 14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,0.7);border:1px solid rgba(99,102,241,0.3);overflow:hidden;display:flex;';
 
     // Tab
     var tab = document.createElement('div');
-    tab.style.cssText = 'position:absolute;top:0;left:0;width:' + TAB_W + 'px;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(99,102,241,0.3);border-right:1px solid rgba(99,102,241,0.5);transition:background 0.2s;';
-    tab.innerHTML = '<span style="writing-mode:vertical-rl;text-orientation:mixed;font-size:11px;font-weight:600;color:#a5b4fc;letter-spacing:1px;">设置</span>';
-    tab.onmouseenter = function() { tab.style.background = 'rgba(99,102,241,0.5)'; };
-    tab.onmouseleave = function() { if (!expanded) tab.style.background = 'rgba(99,102,241,0.3)'; };
-    tab.onclick = function() { togglePanel2(); };
+    tab.style.cssText = 'width:' + TAB_W + 'px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:rgba(99,102,241,0.2);border-right:1px solid rgba(99,102,241,0.4);transition:background 0.2s;flex-shrink:0;';
+
+    var arrow = document.createElement('span');
+    arrow.textContent = '▶';
+    arrow.style.cssText = 'font-size:12px;color:#a5b4fc;transition:transform 0.3s ease;';
+
+    var lbl = document.createElement('span');
+    lbl.textContent = '收起';
+    lbl.style.cssText = 'writing-mode:vertical-rl;font-size:10px;color:#94a3b8;margin-top:6px;letter-spacing:2px;';
+
+    tab.appendChild(arrow);
+    tab.appendChild(lbl);
+    tab.onmouseenter = function() { tab.style.background = 'rgba(99,102,241,0.4)'; };
+    tab.onmouseleave = function() { tab.style.background = 'rgba(99,102,241,0.2)'; };
     d2.appendChild(tab);
 
-    // Content
-    var content = document.createElement('div');
-    content.style.cssText = 'position:absolute;top:0;left:' + TAB_W + 'px;right:0;bottom:0;padding:12px;overflow-y:auto;';
-
-    var hdr2 = document.createElement('div');
-    hdr2.style.cssText = 'display:flex;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(51,65,85,0.5);';
-    hdr2.innerHTML = '<span style="font-size:14px;font-weight:600;">设置</span>';
-    content.appendChild(hdr2);
-
+    // Info
     var info = document.createElement('div');
-    info.style.cssText = 'font-size:11px;color:#94a3b8;line-height:1.6;';
-    info.innerHTML = '<div style="margin-bottom:6px;color:#a5b4fc;font-weight:500;">📌 使用方法</div><div style="margin-bottom:8px;">开启后退出大厅，重新进入多人游戏即可连接到 Lobby 0</div><div style="margin-bottom:6px;color:#a5b4fc;font-weight:500;">🌐 支持平台</div><div>territorial.io</div><div>fxclient.github.io</div>';
-    content.appendChild(info);
+    info.style.cssText = 'flex:1;padding:12px;overflow-y:auto;';
+    info.innerHTML = '<div style="font-weight:600;font-size:12px;margin-bottom:8px;color:#a5b4fc;">🏰 TT Lobby 0</div><div style="font-size:10px;color:#94a3b8;line-height:1.6;margin-bottom:8px;">点击左侧标签可收起/展开面板</div><div style="font-size:10px;color:#94a3b8;line-height:1.6;">🌐 territorial.io<br/>🌐 fxclient.github.io</div>';
+    d2.appendChild(info);
 
-    d2.appendChild(content);
-    document.body.appendChild(d2);
+    wrap.appendChild(d2);
+    document.body.appendChild(wrap);
 
-    function togglePanel2() {
-      expanded = !expanded;
-      if (expanded) {
-        d2.style.transform = 'translateX(0px)';
-        tab.style.background = 'rgba(99,102,241,0.5)';
+    // Toggle
+    var uiVisible = true;
+    tab.onclick = function() {
+      uiVisible = !uiVisible;
+      if (uiVisible) {
+        wrap.style.transform = 'translateX(0)';
+        arrow.textContent = '▶';
+        lbl.textContent = '收起';
       } else {
-        d2.style.transform = 'translateX(calc(100% - ' + TAB_W + 'px))';
-        tab.style.background = 'rgba(99,102,241,0.3)';
+        wrap.style.transform = 'translateX(' + W + 'px)';
+        arrow.textContent = '◀';
+        lbl.textContent = '展开';
       }
+    };
+  }
+
+  // Robust wait for body
+  function tryCreate() {
+    if (document.body) {
+      createPanel();
+    } else {
+      setTimeout(tryCreate, 100);
     }
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', createPanel);
+    document.addEventListener('DOMContentLoaded', tryCreate);
   } else {
-    createPanel();
+    tryCreate();
   }
+  // Fallback
+  setTimeout(tryCreate, 2000);
 
-  console.log('[TT] Lobby 0 Tool v7.3 loaded, enabled=' + isOn());
+  console.log('[TT] Lobby 0 Tool v7.4 loaded, enabled=' + isOn());
 })();
